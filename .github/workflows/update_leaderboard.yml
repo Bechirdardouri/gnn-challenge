@@ -1,0 +1,43 @@
+name: Update Leaderboard (main)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "submissions/*.csv"
+
+permissions:
+  contents: write
+
+jobs:
+  leaderboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Decrypt hidden test labels
+        env:
+          TEST_LABELS_KEY: ${{ secrets.TEST_LABELS_KEY }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 \
+            -in data/test_labels.csv.enc \
+            -out data/test_labels.csv \
+            -pass pass:$TEST_LABELS_KEY
+
+      - name: Update leaderboard.md
+        run: |
+          python scoring/update_leaderboard.py
+
+      - name: Commit leaderboard update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add leaderboard.md
+          git commit -m "Update leaderboard" || echo "No changes to commit"
+          git push

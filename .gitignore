@@ -1,3 +1,8 @@
-
+__pycache__/
+*.py[cod]
+*.egg-info/
 .venv/
-.venv312/
+.env
+
+# Data artifacts
+/data/test_labels.csv

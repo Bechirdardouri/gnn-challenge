@@ -1,0 +1,85 @@
+name: Score Submission (PR)
+
+on:
+  pull_request_target:
+    paths:
+      - "submissions/*.csv"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: score-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base repository (trusted)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Find submission file in this PR
+        id: findfile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=${{ github.event.pull_request.number }}
+          gh api repos/${{ github.repository }}/pulls/$PR/files --paginate > pr_files.json
+          FILE=$(cat pr_files.json | jq -r '.[] | select(.filename | test("^submissions/.*\\.csv$")) | .filename' | head -n 1)
+
+          if [ -z "$FILE" ]; then
+            echo "No submissions/*.csv found in PR."
+            exit 1
+          fi
+
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+          echo "Found submission file: $FILE"
+
+      - name: Download submission CSV from PR HEAD (without checkout)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FILE="${{ steps.findfile.outputs.file }}"
+          SHA="${{ github.event.pull_request.head.sha }}"
+
+          gh api repos/${{ github.repository }}/contents/$FILE?ref=$SHA --jq '.content' \
+            | tr -d '\n' | base64 -d > submission.csv
+
+          echo "Downloaded submission.csv"
+          head -n 3 submission.csv || true
+
+      - name: Decrypt hidden test labels
+        env:
+          TEST_LABELS_KEY: ${{ secrets.TEST_LABELS_KEY }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 \
+            -in data/test_labels.csv.enc \
+            -out data/test_labels.csv \
+            -pass pass:$TEST_LABELS_KEY
+
+      - name: Run scoring
+        id: score
+        run: |
+          python scoring/scoring_script.py --submission submission.csv --truth data/test_labels.csv | tee score.txt
+          SCORE=$(cat score.txt | sed -n 's/^MACRO_F1=//p')
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+      - name: Comment score on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=${{ github.event.pull_request.number }}
+          FILE="${{ steps.findfile.outputs.file }}"
+          SCORE="${{ steps.score.outputs.score }}"
+          gh pr comment $PR --body "✅ Scored **$FILE**\n\n**Macro-F1:** \`$SCORE\`\n\nTip: improve Macro-F1 by handling heterophily + noisy labels + missing features."
