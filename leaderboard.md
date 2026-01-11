@@ -8,11 +8,11 @@
 
 ---
 
-### 📊 Baseline Scores
+###  Baseline Scores
 - **Random Forest (Tabular):** 0.181
 - **GraphSAGE (GNN):** 0.181
 
-### 🎯 Challenge Details
+###  Challenge Details
 - **Metric:** Macro-F1 (equal weight per class)
 - **Task:** Few-shot node classification with noisy labels
 - **Difficulty:** Label noise (12%) + Feature dropout (30%)
