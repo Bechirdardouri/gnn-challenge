@@ -33,7 +33,7 @@ python data/make_dataset.py
 ##  Evaluation Metric
 **Macro-F1** on hidden test labels - equal weight to all classes regardless of frequency.
 
-## 📋 Rules
+##  Rules
 -  No external data allowed
 -  Must run on CPU in under 5 minutes
 -  Any GNN architecture or sampling method permitted
@@ -151,5 +151,5 @@ Issues and pull requests are welcome! For major changes, please open an issue fi
 
 ---
 
-**Happy modeling! **
+**Happy modeling!**
 
