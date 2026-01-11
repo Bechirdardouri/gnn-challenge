@@ -1,13 +1,13 @@
 import os
 import numpy as np
 import pandas as pd
-import dgl
-from dgl.data import ActorDataset
+import torch
+from torch_geometric.datasets import Actor
 from sklearn.decomposition import TruncatedSVD
 
 
 def main(
-    out_dir="data",
+    out_dir=".",
     seed=42,
     n_components=128,
     train_per_class=20,
@@ -17,14 +17,27 @@ def main(
 ):
     rng = np.random.RandomState(seed)
 
-    ds = ActorDataset()
-    g = ds[0]
-
-    g = dgl.to_bidirected(g, copy_ndata=True)
-
-    x = g.ndata["feat"].numpy().astype(np.float32)
-    y = g.ndata["label"].numpy().astype(np.int64)
+    # Load Actor dataset using PyTorch Geometric
+    dataset = Actor(root='/tmp/Actor')
+    data = dataset[0]
+    
+    # Extract features and labels
+    x = data.x.numpy().astype(np.float32)
+    y = data.y.numpy().astype(np.int64)
     num_classes = int(y.max() + 1)
+    
+    # Get edges (PyTorch Geometric format is [2, num_edges])
+    edge_index = data.edge_index.numpy()
+    
+    # Create bidirectional edges if needed
+    edges_set = set()
+    for i in range(edge_index.shape[1]):
+        src, dst = edge_index[0, i], edge_index[1, i]
+        edges_set.add((int(src), int(dst)))
+        edges_set.add((int(dst), int(src)))  # Add reverse edge
+    
+    # Convert to lists
+    src_list, dst_list = zip(*edges_set) if edges_set else ([], [])
 
     svd = TruncatedSVD(n_components=n_components, random_state=seed)
     xd = svd.fit_transform(x)
@@ -49,8 +62,7 @@ def main(
     flip = rng.rand(len(y_train)) < label_noise
     y_train[flip] = rng.randint(0, num_classes, size=flip.sum())
 
-    src, dst = g.edges()
-    edges = pd.DataFrame({"src": src.numpy(), "dst": dst.numpy()})
+    edges = pd.DataFrame({"src": src_list, "dst": dst_list})
     edges.to_csv(os.path.join(out_dir, "edges.csv"), index=False)
 
     def to_df(node_ids, labels=None):
@@ -79,4 +91,3 @@ def main(
 
 if __name__ == "__main__":
     main()
-

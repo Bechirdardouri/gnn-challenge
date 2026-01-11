@@ -4,9 +4,11 @@ HeteroShot is a mini competition focused on few-shot node classification with no
 and missing features. Participants submit predictions as a CSV and receive a Macro-F1 score
 automatically via GitHub Actions.
 
+📊 **[View Live Leaderboard](leaderboard.md)**
+
 ## Task
 Predict node class labels on a graph (node classification). The dataset is derived from
-DGL's ActorDataset with:
+the Actor dataset with:
 - few-shot training labels per class
 - label noise in the training split
 - feature dropout applied to all splits
