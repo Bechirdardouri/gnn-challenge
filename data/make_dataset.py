@@ -1,3 +1,13 @@
+"""Dataset generation script for HeteroShot challenge.
+
+This script generates a few-shot node classification dataset with:
+- Label noise in training split
+- Feature dropout across all splits
+- Dimensionality reduction via SVD
+
+The dataset is derived from the Actor dataset (film-actor network).
+"""
+
 import os
 import numpy as np
 import pandas as pd
@@ -15,6 +25,17 @@ def main(
     label_noise=0.12,
     feature_dropout=0.30,
 ):
+    """Generate the dataset with specified parameters.
+    
+    Args:
+        out_dir: Output directory for generated CSV files
+        seed: Random seed for reproducibility
+        n_components: Number of SVD components for dimensionality reduction
+        train_per_class: Number of training nodes per class (few-shot)
+        val_per_class: Number of validation nodes per class
+        label_noise: Fraction of training labels to flip randomly
+        feature_dropout: Fraction of features to set to zero
+    """
     rng = np.random.RandomState(seed)
 
     # Load Actor dataset using PyTorch Geometric

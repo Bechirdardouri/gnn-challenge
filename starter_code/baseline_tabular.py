@@ -1,9 +1,16 @@
+"""Baseline tabular model for HeteroShot challenge.
+
+This script trains a Random Forest classifier on node features only,
+ignoring the graph structure. It serves as a simple baseline.
+"""
+
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
 
 
 def main():
+    """Train Random Forest classifier and generate predictions."""
     train = pd.read_csv("../data/train.csv")
     val = pd.read_csv("../data/val.csv")
     test = pd.read_csv("../data/test.csv")

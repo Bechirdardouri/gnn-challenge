@@ -1,8 +1,25 @@
+"""Scoring script for HeteroShot challenge submissions.
+
+This script validates submission format and computes Macro-F1 score
+against ground truth labels.
+"""
+
 import argparse
 import csv
 
 
 def _read_labels(path):
+    """Read and validate labels from CSV file.
+    
+    Args:
+        path: Path to CSV file with node_id and target columns
+        
+    Returns:
+        dict: Mapping from node_id (str) to target label (int)
+        
+    Raises:
+        ValueError: If CSV format is invalid
+    """
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
@@ -23,6 +40,15 @@ def _read_labels(path):
 
 
 def _macro_f1(y_true, y_pred):
+    """Calculate Macro-F1 score.
+    
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        
+    Returns:
+        float: Macro-averaged F1 score
+    """
     labels = sorted(set(y_true))
     scores = []
     for label in labels:
@@ -35,7 +61,8 @@ def _macro_f1(y_true, y_pred):
 
 
 def main():
-    ap = argparse.ArgumentParser()
+    """Main function to score a submission."""
+    ap = argparse.ArgumentParser(description="Score a submission against ground truth")
     ap.add_argument("--submission", required=True)
     ap.add_argument("--truth", required=True)
     args = ap.parse_args()

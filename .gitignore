@@ -1,8 +1,56 @@
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+*.egg
 *.egg-info/
-.venv/
-.env
+dist/
+build/
+.eggs/
 
-# Data artifacts
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment
+.env
+.env.local
+
+# Data artifacts (keep encrypted version)
 /data/test_labels.csv
+
+# Prevent data files in root directory
+/*.csv
+!submissions/*.csv
+
+# Model artifacts
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.h5
+*.hdf5
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

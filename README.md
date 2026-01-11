@@ -1,3 +1,7 @@
+# HeteroShot: Few-Shot Node Classification Challenge
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Overview
 HeteroShot is a mini competition focused on few-shot node classification with noisy labels
@@ -26,39 +30,77 @@ To generate the dataset locally:
 python data/make_dataset.py
 ```
 
-## Metric
-Macro-F1 on hidden test labels.
+## 🎯 Evaluation Metric
+**Macro-F1** on hidden test labels - equal weight to all classes regardless of frequency.
 
-## Rules
-- No external data.
-- Must run on CPU in under 5 minutes.
-- You may use any GNN / sampling method.
+## 📋 Rules
+- ✅ No external data allowed
+- ✅ Must run on CPU in under 5 minutes
+- ✅ Any GNN architecture or sampling method permitted
+- ✅ Standard ML libraries allowed (PyTorch, scikit-learn, etc.)
 
-## How to submit
-1. Fork the repo
-2. Add your file: `submissions/<team>.csv`
-3. CSV must have columns: `node_id,target`
-4. Open a Pull Request
+## 🚀 Quick Start
 
-A bot will comment your Macro-F1 score.
+### Installation
+```bash
+# Clone the repository
+git clone <repository-url>
+cd gnn-challenge
 
-## Baselines
-- `starter_code/baseline_tabular.py` (RandomForest)
-- `starter_code/baseline_gnn.py` (GraphSAGE + NeighborSampler)
+# Install dependencies
+pip install -r starter_code/requirements.txt
 
-## Scoring and leaderboard workflow
-1. `scoring/scoring_script.py` validates the submission and prints `MACRO_F1=...`.
-2. `pull_request_target` workflow downloads only the submission CSV and scores it.
-3. On merge to `main`, `scoring/update_leaderboard.py` recomputes all scores and
-   overwrites `leaderboard.md`.
+# Generate dataset
+python data/make_dataset.py
 
-## Secrets and encrypted labels
-The test labels are encrypted and committed as `data/test_labels.csv.enc`. To enable
-scoring workflows, add a repository secret named `TEST_LABELS_KEY` with the passphrase
-used to encrypt the file.
+# Verify setup
+python check_setup.py
+```
 
-To generate and encrypt labels locally:
+### Run Baselines
+```bash
+# Tabular baseline (Random Forest)
+cd starter_code
+python baseline_tabular.py
 
+# GNN baseline (GraphSAGE)
+python baseline_gnn.py
+```
+
+## 📤 How to Submit
+1. **Fork this repository**
+2. **Create your solution** and generate predictions
+3. **Add your submission**: `submissions/<your_team_name>.csv`
+   - Required columns: `node_id`, `target`
+   - Must include predictions for all test nodes
+4. **Open a Pull Request**
+   - A bot will automatically comment your Macro-F1 score
+   - Upon merge, the leaderboard updates automatically
+
+## 📊 Baselines
+
+| Model | Description | Val F1 | Test F1 |
+|-------|-------------|--------|---------|
+| Random Forest | `baseline_tabular.py` - Features only | 0.214 | 0.181 |
+| GraphSAGE | `baseline_gnn.py` - GNN with 2 layers | 0.221 | 0.181 |
+
+## 🔧 Scoring Workflow
+
+### Automated PR Scoring
+1. `scoring/scoring_script.py` validates submission format and computes Macro-F1
+2. GitHub Actions workflow downloads submission from PR and scores it
+3. Bot comments the score on the PR
+
+### Leaderboard Updates
+- On merge to `main`, `scoring/update_leaderboard.py` recomputes all scores
+- `leaderboard.md` is automatically updated and committed
+
+## 🔐 Encrypted Test Labels
+Test labels are encrypted (`data/test_labels.csv.enc`) to prevent cheating.
+
+**For maintainers:** To enable scoring workflows, add a repository secret `TEST_LABELS_KEY`.
+
+### Generating Encrypted Labels
 ```bash
 python data/make_dataset.py
 export TEST_LABELS_KEY="your-strong-passphrase"
@@ -69,13 +111,45 @@ openssl enc -aes-256-cbc -salt -pbkdf2 \
 rm -f data/test_labels.csv
 ```
 
-## Repository layout
+## 📁 Repository Structure
 ```
 .
-├── data/
-├── scoring/
-├── starter_code/
-├── submissions/
-└── .github/workflows/
+├── data/                      # Dataset files
+│   ├── make_dataset.py       # Dataset generation script
+│   ├── edges.csv             # Graph structure
+│   ├── train.csv             # Training nodes (few-shot + noisy)
+│   ├── val.csv               # Validation nodes
+│   ├── test.csv              # Test nodes (unlabeled)
+│   └── test_labels.csv.enc   # Encrypted ground truth
+├── starter_code/             # Baseline implementations
+│   ├── baseline_tabular.py   # Random Forest baseline
+│   ├── baseline_gnn.py       # GraphSAGE baseline
+│   └── requirements.txt      # Python dependencies
+├── scoring/                  # Scoring infrastructure
+│   ├── scoring_script.py     # Compute Macro-F1
+│   └── update_leaderboard.py # Generate leaderboard
+├── submissions/              # Participant submissions
+│   └── *.csv                 # Team predictions
+├── .github/workflows/        # CI/CD automation
+│   ├── score_pr.yml         # Score PRs automatically
+│   └── update_leaderboard.yml # Update leaderboard on merge
+└── leaderboard.md           # Current rankings
 ```
+
+## 💡 Tips for Success
+- Handle class imbalance carefully (Macro-F1 treats all classes equally)
+- Leverage graph structure - tabular methods ignore valuable information
+- Robust to label noise - training labels are 12% corrupted
+- Deal with missing features - 30% feature dropout applied
+- Few-shot learning - only 20 labeled nodes per class for training
+
+## 📝 License
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+Issues and pull requests are welcome! For major changes, please open an issue first.
+
+---
+
+**Happy modeling! 🎉**
 

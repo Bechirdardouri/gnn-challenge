@@ -1,3 +1,9 @@
+"""Baseline GNN model for HeteroShot challenge.
+
+This script trains a GraphSAGE model that leverages both node features
+and graph structure for few-shot node classification.
+"""
+
 import numpy as np
 import pandas as pd
 import torch
@@ -13,6 +19,15 @@ SEED = 42
 
 
 class SAGE(nn.Module):
+    """GraphSAGE model with 2 layers.
+    
+    Args:
+        in_dim: Input feature dimension
+        hid_dim: Hidden layer dimension
+        out_dim: Output dimension (number of classes)
+        dropout: Dropout rate
+    """
+    
     def __init__(self, in_dim, hid_dim, out_dim, dropout=0.3):
         super().__init__()
         self.conv1 = SAGEConv(in_dim, hid_dim)
@@ -20,6 +35,7 @@ class SAGE(nn.Module):
         self.drop = nn.Dropout(dropout)
 
     def forward(self, x, edge_index):
+        """Forward pass through the network."""
         h = self.conv1(x, edge_index)
         h = F.relu(h)
         h = self.drop(h)
@@ -28,6 +44,11 @@ class SAGE(nn.Module):
 
 
 def load_graph():
+    """Load graph edges from CSV file.
+    
+    Returns:
+        torch.Tensor: Edge index tensor of shape [2, num_edges]
+    """
     edges = pd.read_csv("../data/edges.csv")
     edge_index = torch.tensor(
         np.stack([edges["src"].to_numpy(), edges["dst"].to_numpy()]), 
@@ -37,6 +58,7 @@ def load_graph():
 
 
 def main():
+    """Train GraphSAGE model and generate test predictions."""
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
