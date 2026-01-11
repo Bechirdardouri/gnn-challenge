@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! This document provides guidelines for participating in the challenge.
 
-## 🎯 Submission Guidelines
+##  Submission Guidelines
 
 ### Format Requirements
 Your submission CSV must:
@@ -25,7 +25,7 @@ node_id,target
 - Use a unique team name (e.g., `submissions/awesome_gnn.csv`)
 - Only alphanumeric characters and underscores in filename
 
-## 📋 Submission Process
+##  Submission Process
 
 1. **Fork the Repository**
    ```bash
@@ -61,7 +61,7 @@ node_id,target
    - A bot will comment your Macro-F1 score within minutes
    - Fix any errors and update your PR if needed
 
-## ✅ Validation Rules
+##  Validation Rules
 
 Your submission will be checked for:
 - Correct CSV format with required columns
@@ -69,14 +69,14 @@ Your submission will be checked for:
 - Integer class labels only
 - No duplicate node IDs
 
-## 🚫 What Not to Do
+##  What Not to Do
 
-- ❌ Do not use external datasets
-- ❌ Do not access test labels (they're encrypted)
-- ❌ Do not submit solutions that take >5 minutes on CPU
-- ❌ Do not copy other participants' code without attribution
+-  Do not use external datasets
+-  Do not access test labels (they're encrypted)
+-  Do not submit solutions that take >5 minutes on CPU
+-  Do not copy other participants' code without attribution
 
-## 🐛 Reporting Issues
+##  Reporting Issues
 
 Found a bug or have a question?
 1. Check existing issues first
@@ -85,17 +85,17 @@ Found a bug or have a question?
    - Steps to reproduce (for bugs)
    - Your environment details
 
-## 🤝 Code of Conduct
+##  Code of Conduct
 
 - Be respectful and constructive
 - Help others learn and improve
 - Share ideas and insights
 - Give credit where due
 
-## 📬 Questions?
+##  Questions?
 
 Open an issue with the `question` label, and we'll help you out!
 
 ---
 
-Good luck! 🎉
+Good luck! 
