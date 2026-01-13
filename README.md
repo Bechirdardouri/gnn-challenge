@@ -144,7 +144,7 @@ rm -f data/test_labels.csv
 - Few-shot learning - only 20 labeled nodes per class for training
 
 ##  License
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details .
 
 ##  Contributing
 Issues and pull requests are welcome! For major changes, please open an issue first.
