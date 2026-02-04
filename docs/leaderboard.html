@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeteroShot Leaderboard</title>
+    <link rel="stylesheet" href="leaderboard.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏆 HeteroShot Leaderboard</h1>
+            <p class="subtitle">Few-Shot Node Classification Challenge</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Search teams, models, notes...">
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="model-filter">Model Type:</label>
+                    <select id="model-filter">
+                        <option value="">All</option>
+                        <option value="human">Human</option>
+                        <option value="llm-only">LLM Only</option>
+                        <option value="human+llm">Human + LLM</option>
+                        <option value="baseline">Baseline</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date-filter">Time Range:</label>
+                    <select id="date-filter">
+                        <option value="">All Time</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="column-toggles">
+                <label><input type="checkbox" data-column="model_type" checked> Model Type</label>
+                <label><input type="checkbox" data-column="date" checked> Date</label>
+                <label><input type="checkbox" data-column="notes" checked> Notes</label>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="leaderboard">
+                <thead>
+                    <tr>
+                        <th data-sort="rank" class="sortable">Rank</th>
+                        <th data-sort="team" class="sortable">Team</th>
+                        <th data-sort="model_type" class="sortable toggle-model_type">Model Type</th>
+                        <th data-sort="score" class="sortable sorted-desc">Score (Macro-F1)</th>
+                        <th data-sort="date" class="sortable toggle-date">Date</th>
+                        <th data-sort="notes" class="toggle-notes">Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats" id="stats">
+            <span id="total-entries">0 entries</span>
+            <span id="filtered-entries"></span>
+        </div>
+
+        <div class="info-section">
+            <h2>📊 Challenge Details</h2>
+            <ul>
+                <li><strong>Metric:</strong> Macro-F1 (equal weight per class)</li>
+                <li><strong>Task:</strong> Few-shot node classification with noisy labels</li>
+                <li><strong>Difficulty:</strong> Label noise (12%) + Feature dropout (30%)</li>
+            </ul>
+            
+            <h2>📋 Baselines</h2>
+            <ul>
+                <li><strong>Random Forest (Tabular):</strong> 0.181</li>
+                <li><strong>GraphSAGE (GNN):</strong> 0.181</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Data source: <a href="../leaderboard/leaderboard.csv">leaderboard.csv</a></p>
+            <p><a href="../README.md">Back to README</a></p>
+        </footer>
+    </div>
+
+    <script src="leaderboard.js"></script>
+</body>
+</html>

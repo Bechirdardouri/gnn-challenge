@@ -8,7 +8,7 @@ HeteroShot is a mini competition focused on few-shot node classification with no
 and missing features. Participants submit predictions as a CSV and receive a Macro-F1 score
 automatically via GitHub Actions.
 
-📊 **[View Live Leaderboard](leaderboard.md)**
+📊 **[View Leaderboard](leaderboard.md)** | 🌐 **[Interactive Leaderboard](docs/leaderboard.html)**
 
 ## Task
 Predict node class labels on a graph (node classification). The dataset is derived from
@@ -70,9 +70,31 @@ python baseline_gnn.py
 ## 📤 How to Submit
 1. **Fork this repository**
 2. **Create your solution** and generate predictions
-3. **Add your submission**: `submissions/<your_team_name>.csv`
+3. **Add your submission** using one of these formats:
+
+   **Option A (Recommended):** Inbox format
+   ```
+   submissions/inbox/<your_team>/<run_id>/
+   ├── predictions.csv    # Required: node_id, target columns
+   └── metadata.json      # Required: model_type field
+   ```
+   
+   **metadata.json example:**
+   ```json
+   {
+     "model_type": "human",
+     "notes": "GraphSAGE with attention"
+   }
+   ```
+   Valid model_type values: `human`, `llm-only`, `human+llm`, `baseline`
+
+   **Option B (Legacy):** Simple format
+   ```
+   submissions/<your_team_name>.csv
+   ```
    - Required columns: `node_id`, `target`
    - Must include predictions for all test nodes
+
 4. **Open a Pull Request**
    - A bot will automatically comment your Macro-F1 score
    - Upon merge, the leaderboard updates automatically
@@ -87,13 +109,16 @@ python baseline_gnn.py
 ## 🔧 Scoring Workflow
 
 ### Automated PR Scoring
-1. `scoring/scoring_script.py` validates submission format and computes Macro-F1
-2. GitHub Actions workflow downloads submission from PR and scores it
-3. Bot comments the score on the PR
+1. `competition/validate_submission.py` validates submission format
+2. `competition/evaluate.py` computes Macro-F1 score
+3. GitHub Actions workflow downloads submission from PR and scores it
+4. Bot comments the score on the PR
 
 ### Leaderboard Updates
-- On merge to `main`, `scoring/update_leaderboard.py` recomputes all scores
-- `leaderboard.md` is automatically updated and committed
+- On merge to `main`, `scoring/update_leaderboard.py` scores all submissions
+- Scores are saved to `leaderboard/leaderboard.csv` (source of truth)
+- `competition/render_leaderboard.py` generates `leaderboard.md`
+- Interactive leaderboard at `docs/leaderboard.html` auto-updates from CSV
 
 ## 🔐 Encrypted Test Labels
 Test labels are encrypted (`data/test_labels.csv.enc`) to prevent cheating.
@@ -125,15 +150,30 @@ rm -f data/test_labels.csv
 │   ├── baseline_tabular.py   # Random Forest baseline
 │   ├── baseline_gnn.py       # GraphSAGE baseline
 │   └── requirements.txt      # Python dependencies
+├── competition/              # Evaluation infrastructure
+│   ├── validate_submission.py # Validate submission format
+│   ├── evaluate.py           # Compute evaluation metrics
+│   ├── render_leaderboard.py # Generate leaderboard.md
+│   └── metrics.py            # Metric definitions
 ├── scoring/                  # Scoring infrastructure
 │   ├── scoring_script.py     # Compute Macro-F1
-│   └── update_leaderboard.py # Generate leaderboard
+│   └── update_leaderboard.py # Update leaderboard.csv
 ├── submissions/              # Participant submissions
-│   └── *.csv                 # Team predictions
+│   ├── *.csv                 # Legacy: direct CSV submissions
+│   └── inbox/                # New: structured submissions
+│       └── <team>/<run_id>/  # Team submission folder
+│           ├── predictions.csv
+│           └── metadata.json
+├── leaderboard/              # Leaderboard data
+│   └── leaderboard.csv       # Source of truth for scores
+├── docs/                     # GitHub Pages content
+│   ├── leaderboard.html      # Interactive leaderboard
+│   ├── leaderboard.css       # Styling
+│   └── leaderboard.js        # Client-side logic
 ├── .github/workflows/        # CI/CD automation
 │   ├── score_pr.yml         # Score PRs automatically
 │   └── update_leaderboard.yml # Update leaderboard on merge
-└── leaderboard.md           # Current rankings
+└── leaderboard.md           # Static leaderboard (auto-generated)
 ```
 
 ## 💡 Tips for Success

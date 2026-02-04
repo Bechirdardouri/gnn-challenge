@@ -1,10 +1,13 @@
 """Leaderboard update script for HeteroShot challenge.
 
 This script scores all submissions in the submissions/ directory
-and generates an updated leaderboard.md file.
+and updates the authoritative leaderboard/leaderboard.csv file.
+The leaderboard.md file is generated separately by competition/render_leaderboard.py.
 """
 
 import csv
+import json
+from datetime import datetime
 from pathlib import Path
 
 
@@ -70,56 +73,151 @@ def score_one(sub_path, truth_path="data/test_labels.csv"):
     return _macro_f1(y_true, y_pred)
 
 
-def main():
-    """Score all submissions and update leaderboard.md."""
-    from datetime import datetime
+def load_existing_leaderboard(csv_path="leaderboard/leaderboard.csv"):
+    """Load existing leaderboard entries from CSV.
     
-    subs = sorted(Path("submissions").glob("*.csv"))
-    rows = []
-    for path in subs:
-        team = path.stem
+    Returns:
+        dict: Mapping from team name to entry dict
+    """
+    entries = {}
+    csv_file = Path(csv_path)
+    
+    if csv_file.exists():
+        with open(csv_file, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                team = row.get("team", "")
+                if team:
+                    entries[team] = {
+                        "team": team,
+                        "model_type": row.get("model_type", ""),
+                        "score": float(row.get("score", 0)),
+                        "date": row.get("date", ""),
+                        "notes": row.get("notes", "")
+                    }
+    
+    return entries
+
+
+def save_leaderboard_csv(entries, csv_path="leaderboard/leaderboard.csv"):
+    """Save leaderboard entries to CSV file.
+    
+    Args:
+        entries: List of entry dictionaries
+        csv_path: Output file path
+    """
+    # Ensure directory exists
+    Path(csv_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    # Sort by score descending
+    sorted_entries = sorted(entries, key=lambda x: x.get("score", 0), reverse=True)
+    
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["team", "model_type", "score", "date", "notes"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for entry in sorted_entries:
+            writer.writerow({
+                "team": entry.get("team", ""),
+                "model_type": entry.get("model_type", ""),
+                "score": entry.get("score", 0),
+                "date": entry.get("date", ""),
+                "notes": entry.get("notes", "")
+            })
+
+
+def find_all_submissions():
+    """Find all submission files (both legacy and inbox format).
+    
+    Returns:
+        List of tuples: (team_name, csv_path, metadata_dict or None)
+    """
+    submissions = []
+    
+    # Legacy format: submissions/*.csv
+    for csv_path in Path("submissions").glob("*.csv"):
+        team = csv_path.stem
+        submissions.append((team, str(csv_path), None))
+    
+    # New inbox format: submissions/inbox/<team>/<run_id>/predictions.csv
+    for pred_path in Path("submissions/inbox").glob("*/*/predictions.csv"):
+        parts = pred_path.parts
+        # submissions/inbox/<team>/<run_id>/predictions.csv
+        team = parts[-3]
+        run_id = parts[-2]
+        team_run = f"{team}/{run_id}"
+        
+        # Try to load metadata
+        metadata_path = pred_path.parent / "metadata.json"
+        metadata = None
+        if metadata_path.exists():
+            try:
+                with open(metadata_path, "r", encoding="utf-8") as f:
+                    metadata = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                pass
+        
+        submissions.append((team_run, str(pred_path), metadata))
+    
+    return submissions
+
+
+def main():
+    """Score all submissions and update leaderboard.csv."""
+    # Load existing leaderboard
+    existing = load_existing_leaderboard()
+    
+    # Find all submissions
+    submissions = find_all_submissions()
+    
+    # Score each submission
+    today = datetime.now().strftime("%Y-%m-%d")
+    new_entries = {}
+    
+    for team, csv_path, metadata in submissions:
         try:
-            s = score_one(str(path))
-            rows.append((team, s, "✅"))
-        except Exception:
-            rows.append((team, None, "❌"))
-
-    rows.sort(key=lambda item: (item[1] is None, -(item[1] or 0)))
-
-    lines = []
-    lines.append("# 🏆 HeteroShot Leaderboard")
-    lines.append("")
-    lines.append(f"**Last Updated:** {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
-    lines.append("")
-    lines.append("| Rank | Team | Macro-F1 | Status |")
-    lines.append("|:----:|------|:--------:|:------:|")
-
-    rank = 1
-    for team, score, status in rows:
-        if score is None:
-            lines.append(f"| - | {team} | invalid | {status} |")
-        else:
-            lines.append(f"| {rank} | {team} | {score:.6f} | {status} |")
-            rank += 1
-
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("### 📊 Baseline Scores")
-    lines.append("- **Random Forest (Tabular):** 0.181")
-    lines.append("- **GraphSAGE (GNN):** 0.181")
-    lines.append("")
-    lines.append("### 🎯 Challenge Details")
-    lines.append("- **Metric:** Macro-F1 (equal weight per class)")
-    lines.append("- **Task:** Few-shot node classification with noisy labels")
-    lines.append("- **Difficulty:** Label noise (12%) + Feature dropout (30%)")
-    lines.append("")
-    lines.append("Want to compete? Check out the [README](README.md) for submission instructions!")
-
-    with open("leaderboard.md", "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-
-    print("Updated leaderboard.md")
+            score = score_one(csv_path)
+            
+            # Get metadata info
+            model_type = ""
+            notes = ""
+            if metadata:
+                model_type = metadata.get("model_type", "")
+                notes = metadata.get("notes", "")
+            
+            # Check if this is better than existing score for same team
+            if team in existing:
+                old_score = existing[team].get("score", 0)
+                if score > old_score:
+                    new_entries[team] = {
+                        "team": team,
+                        "model_type": model_type or existing[team].get("model_type", ""),
+                        "score": score,
+                        "date": today,
+                        "notes": notes or existing[team].get("notes", "")
+                    }
+                else:
+                    new_entries[team] = existing[team]
+            else:
+                new_entries[team] = {
+                    "team": team,
+                    "model_type": model_type,
+                    "score": score,
+                    "date": today,
+                    "notes": notes
+                }
+            
+            print(f"✅ {team}: {score:.6f}")
+            
+        except Exception as e:
+            print(f"❌ {team}: {e}")
+            # Keep existing entry if scoring fails
+            if team in existing:
+                new_entries[team] = existing[team]
+    
+    # Save updated leaderboard.csv
+    save_leaderboard_csv(list(new_entries.values()))
+    print(f"\n📊 Updated leaderboard/leaderboard.csv with {len(new_entries)} entries")
 
 
 if __name__ == "__main__":

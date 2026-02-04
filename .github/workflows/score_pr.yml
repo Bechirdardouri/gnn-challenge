@@ -3,6 +3,7 @@ name: Score Submission (PR)
 on:
   pull_request_target:
     paths:
+      - "submissions/inbox/**"
       - "submissions/*.csv"
 
 permissions:
@@ -36,7 +37,14 @@ jobs:
         run: |
           PR=${{ github.event.pull_request.number }}
           gh api repos/${{ github.repository }}/pulls/$PR/files --paginate > pr_files.json
-          FILE=$(cat pr_files.json | jq -r '.[] | select(.filename | test("^submissions/.*\\.csv$")) | .filename' | head -n 1)
+          
+          # First try inbox format (preferred)
+          FILE=$(cat pr_files.json | jq -r '.[] | select(.filename | test("^submissions/inbox/.*/predictions\\.csv$")) | .filename' | head -n 1)
+          
+          # Fall back to legacy format
+          if [ -z "$FILE" ]; then
+            FILE=$(cat pr_files.json | jq -r '.[] | select(.filename | test("^submissions/[^/]+\\.csv$")) | .filename' | head -n 1)
+          fi
 
           if [ -z "$FILE" ]; then
             echo "No submissions/*.csv found in PR."

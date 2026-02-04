@@ -1,12 +1,21 @@
 # 🏆 HeteroShot Leaderboard
 
-**Last Updated:** 2026-01-11 16:39 UTC
+**Last Updated:** 2026-02-04 09:03 UTC
 
-| Rank | Team | Macro-F1 | Status |
-|:----:|------|:--------:|:------:|
-| 1 | sample_submission | 0.180864 | ✅ |
+📊 **[View Interactive Leaderboard](https://YOUR-ORG.github.io/YOUR-REPO/leaderboard.html)**
+
+| Rank | Team | Model Type | Macro-F1 | Date |
+|:----:|------|:----------:|:--------:|:----:|
+| 🥇 1 | sample_submission | 📊 Baseline | 0.237211 | 2026-02-04 |
 
 ---
+
+### 📈 Statistics
+
+- **Total Submissions:** 1
+- **Best Score:** 0.237211 (sample_submission)
+- **By Model Type:**
+  - baseline: 1
 
 ### 📊 Baseline Scores
 - **Random Forest (Tabular):** 0.181
@@ -17,4 +26,9 @@
 - **Task:** Few-shot node classification with noisy labels
 - **Difficulty:** Label noise (12%) + Feature dropout (30%)
 
+---
+
 Want to compete? Check out the [README](README.md) for submission instructions!
+
+*This file is auto-generated. Do not edit manually.*
+*Source of truth: [leaderboard/leaderboard.csv](leaderboard/leaderboard.csv)*

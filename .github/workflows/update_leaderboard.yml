@@ -4,7 +4,9 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "submissions/inbox/**"
       - "submissions/*.csv"
+      - "leaderboard/leaderboard.csv"
 
 permissions:
   contents: write
@@ -30,14 +32,18 @@ jobs:
             -out data/test_labels.csv \
             -pass pass:$TEST_LABELS_KEY
 
-      - name: Update leaderboard.md
+      - name: Score new submissions and update leaderboard.csv
         run: |
           python scoring/update_leaderboard.py
 
-      - name: Commit leaderboard update
+      - name: Render leaderboard.md from leaderboard.csv
+        run: |
+          python competition/render_leaderboard.py
+
+      - name: Commit leaderboard updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add leaderboard.md
+          git add leaderboard.md leaderboard/leaderboard.csv
           git commit -m "Update leaderboard" || echo "No changes to commit"
           git push

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeteroShot - GNN Challenge</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--muted); font-size: 1.1rem; }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        .card p { color: var(--muted); font-size: 0.9rem; }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+        
+        footer a { color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 HeteroShot</h1>
+            <p class="subtitle">Few-Shot Node Classification Challenge</p>
+        </header>
+        
+        <div class="cards">
+            <a href="leaderboard.html" class="card">
+                <h2>🏆 Leaderboard</h2>
+                <p>View current rankings, filter by model type, and compare submissions.</p>
+            </a>
+            
+            <a href="../README.md" class="card">
+                <h2>📖 Documentation</h2>
+                <p>Learn about the challenge, rules, and how to submit.</p>
+            </a>
+            
+            <a href="../starter_code/" class="card">
+                <h2>🚀 Starter Code</h2>
+                <p>Get started with baseline implementations.</p>
+            </a>
+            
+            <a href="../data/" class="card">
+                <h2>📊 Dataset</h2>
+                <p>Access training, validation, and test data.</p>
+            </a>
+        </div>
+        
+        <div class="card" style="text-align: center; margin: 2rem 0;">
+            <h2>📋 Quick Stats</h2>
+            <p style="margin-top: 1rem;">
+                <strong>Metric:</strong> Macro-F1<br>
+                <strong>Task:</strong> Few-shot node classification<br>
+                <strong>Label Noise:</strong> 12%<br>
+                <strong>Feature Dropout:</strong> 30%
+            </p>
+        </div>
+        
+        <footer>
+            <p>HeteroShot GNN Challenge</p>
+            <p><a href="https://github.com">View on GitHub</a></p>
+        </footer>
+    </div>
+</body>
+</html>
