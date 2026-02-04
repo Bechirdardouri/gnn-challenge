@@ -55,7 +55,7 @@ def render_markdown(entries: list[dict], output_path: str = "leaderboard.md") ->
     lines.append("")
     lines.append(f"**Last Updated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC")
     lines.append("")
-    lines.append("📊 **[View Interactive Leaderboard](https://YOUR-ORG.github.io/YOUR-REPO/leaderboard.html)**")
+    lines.append("📊 **[View Interactive Leaderboard](https://bechirdardouri.github.io/gnn-challenge/leaderboard.html)**")
     lines.append("")
     
     # Table header

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-04 09:06 UTC
 
-📊 **[View Interactive Leaderboard](https://YOUR-ORG.github.io/YOUR-REPO/leaderboard.html)**
+📊 **[View Interactive Leaderboard](https://bechirdardouri.github.io/gnn-challenge/leaderboard.html)**
 
 | Rank | Team | Model Type | Macro-F1 | Date |
 |:----:|------|:----------:|:--------:|:----:|

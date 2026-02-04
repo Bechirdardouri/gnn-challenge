@@ -8,7 +8,7 @@ HeteroShot is a mini competition focused on few-shot node classification with no
 and missing features. Participants submit predictions as a CSV and receive a Macro-F1 score
 automatically via GitHub Actions.
 
-📊 **[View Leaderboard](leaderboard.md)** | 🌐 **[Interactive Leaderboard](docs/leaderboard.html)**
+📊 **[View Leaderboard](leaderboard.md)** | 🌐 **[Interactive Leaderboard](https://bechirdardouri.github.io/gnn-challenge/leaderboard.html)**
 
 ## Task
 Predict node class labels on a graph (node classification). The dataset is derived from
