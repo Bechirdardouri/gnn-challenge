@@ -12,9 +12,9 @@ def check_python_version():
     """Check Python version is 3.10+."""
     version = sys.version_info
     if version.major < 3 or (version.major == 3 and version.minor < 10):
-        print(f"❌ Python 3.10+ required, found {version.major}.{version.minor}")
+        print(f" Python 3.10+ required, found {version.major}.{version.minor}")
         return False
-    print(f"✅ Python {version.major}.{version.minor}.{version.micro}")
+    print(f" Python {version.major}.{version.minor}.{version.micro}")
     return True
 
 
@@ -22,10 +22,10 @@ def check_package(package_name):
     """Check if a package is importable."""
     try:
         __import__(package_name)
-        print(f"✅ {package_name}")
+        print(f" {package_name}")
         return True
     except ImportError:
-        print(f"❌ {package_name} not installed")
+        print(f" {package_name} not installed")
         return False
 
 
@@ -43,9 +43,9 @@ def check_files():
     all_exist = True
     for file in required:
         if Path(file).exists():
-            print(f"✅ {file}")
+            print(f" {file}")
         else:
-            print(f"❌ {file} missing - run: python data/make_dataset.py")
+            print(f" {file} missing - run: python data/make_dataset.py")
             all_exist = False
     
     return all_exist
@@ -53,30 +53,30 @@ def check_files():
 
 def main():
     """Run all checks."""
-    print("🔍 HeteroShot Environment Check\n")
+    print(" HeteroShot Environment Check\n")
     
-    print("1️⃣ Python Version:")
+    print(" Python Version:")
     py_ok = check_python_version()
     print()
     
-    print("2️⃣ Required Packages:")
+    print(" Required Packages:")
     packages = ["numpy", "pandas", "sklearn", "torch", "torch_geometric"]
     pkg_ok = all(check_package(pkg) for pkg in packages)
     print()
     
-    print("3️⃣ Dataset Files:")
+    print(" Dataset Files:")
     files_ok = check_files()
     print()
     
     if py_ok and pkg_ok and files_ok:
-        print("🎉 All checks passed! You're ready to compete!")
+        print(" All checks passed! You're ready to compete!")
         print("\nNext steps:")
         print("  1. Run baseline: python starter_code/baseline_tabular.py")
         print("  2. Create your model")
         print("  3. Submit via Pull Request")
         return 0
     else:
-        print("⚠️  Some checks failed. Please fix the issues above.")
+        print("  Some checks failed. Please fix the issues above.")
         return 1
 
 
