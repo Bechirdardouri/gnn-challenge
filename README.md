@@ -30,16 +30,16 @@ To generate the dataset locally:
 python data/make_dataset.py
 ```
 
-## 🎯 Evaluation Metric
+##  Evaluation Metric
 **Macro-F1** on hidden test labels - equal weight to all classes regardless of frequency.
 
-## 📋 Rules
-- ✅ No external data allowed
-- ✅ Must run on CPU in under 5 minutes
-- ✅ Any GNN architecture or sampling method permitted
-- ✅ Standard ML libraries allowed (PyTorch, scikit-learn, etc.)
+##  Rules
+-  No external data allowed
+-  Must run on CPU in under 5 minutes
+-  Any GNN architecture or sampling method permitted
+-  Standard ML libraries allowed (PyTorch, scikit-learn, etc.)
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation
 ```bash
@@ -67,7 +67,7 @@ python baseline_tabular.py
 python baseline_gnn.py
 ```
 
-## 📤 How to Submit
+##  How to Submit
 1. **Fork this repository**
 2. **Create your solution** and generate predictions
 3. **Add your submission** using one of these formats:
@@ -99,14 +99,14 @@ python baseline_gnn.py
    - A bot will automatically comment your Macro-F1 score
    - Upon merge, the leaderboard updates automatically
 
-## 📊 Baselines
+##  Baselines
 
 | Model | Description | Val F1 | Test F1 |
 |-------|-------------|--------|---------|
 | Random Forest | `baseline_tabular.py` - Features only | 0.214 | 0.181 |
 | GraphSAGE | `baseline_gnn.py` - GNN with 2 layers | 0.221 | 0.181 |
 
-## 🔧 Scoring Workflow
+##  Scoring Workflow
 
 ### Automated PR Scoring
 1. `competition/validate_submission.py` validates submission format
@@ -120,7 +120,7 @@ python baseline_gnn.py
 - `competition/render_leaderboard.py` generates `leaderboard.md`
 - Interactive leaderboard at `docs/leaderboard.html` auto-updates from CSV
 
-## 🔐 Encrypted Test Labels
+##  Encrypted Test Labels
 Test labels are encrypted (`data/test_labels.csv.enc`) to prevent cheating.
 
 **For maintainers:** To enable scoring workflows, add a repository secret `TEST_LABELS_KEY`.
@@ -136,7 +136,7 @@ openssl enc -aes-256-cbc -salt -pbkdf2 \
 rm -f data/test_labels.csv
 ```
 
-## 📁 Repository Structure
+##  Repository Structure
 ```
 .
 ├── data/                      # Dataset files
@@ -176,17 +176,17 @@ rm -f data/test_labels.csv
 └── leaderboard.md           # Static leaderboard (auto-generated)
 ```
 
-## 💡 Tips for Success
+##  Tips for Success
 - Handle class imbalance carefully (Macro-F1 treats all classes equally)
 - Leverage graph structure - tabular methods ignore valuable information
 - Robust to label noise - training labels are 12% corrupted
 - Deal with missing features - 30% feature dropout applied
 - Few-shot learning - only 20 labeled nodes per class for training
 
-## 📝 License
+##  License
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+##  Contributing
 Issues and pull requests are welcome! For major changes, please open an issue first.
 
 ---
