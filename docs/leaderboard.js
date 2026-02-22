@@ -71,6 +71,37 @@ function sourceClassName(source){
   return `source-${toLower(source).replace(/[^a-z0-9_-]/g, "_") || "manual"}`;
 }
 
+const REPO_BLOB_BASE = "https://github.com/Bechirdardouri/gnn-challenge/blob/main/";
+
+function encodeRepoPath(path){
+  return path
+    .split("/")
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+}
+
+function resolveRowLink(row){
+  const notes = (row.notes ?? "").toString().trim();
+  if(/^https?:\/\//i.test(notes)){
+    return notes;
+  }
+  if(notes.startsWith("submissions/") || notes.startsWith("docs/") || notes.startsWith("leaderboard/")){
+    return `${REPO_BLOB_BASE}${encodeRepoPath(notes)}`;
+  }
+  return "";
+}
+
+function appendLinkedText(cell, text, url, className){
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.className = className;
+  link.textContent = text;
+  cell.appendChild(link);
+}
+
 const state = {
   rows: [],
   filtered: [],
@@ -186,7 +217,19 @@ function renderPodium(rows){
       return;
     }
 
-    team.textContent = slot.row.team || "--";
+    const rowUrl = resolveRowLink(slot.row);
+    team.textContent = "";
+    if(rowUrl){
+      const link = document.createElement("a");
+      link.href = rowUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.className = "inline-link podium-link";
+      link.textContent = slot.row.team || "--";
+      team.appendChild(link);
+    }else{
+      team.textContent = slot.row.team || "--";
+    }
     score.textContent = formatScore(slot.row);
     item.classList.remove("empty");
   });
@@ -200,6 +243,15 @@ function renderTable(){
     const tr = document.createElement("tr");
     tr.className = "row-in";
     tr.style.animationDelay = `${Math.min(idx * 26, 320)}ms`;
+    const rowLink = resolveRowLink(row);
+
+    if(rowLink){
+      tr.classList.add("clickable-row");
+      tr.addEventListener("click", (event) => {
+        if(event.target.closest("a")){ return; }
+        window.open(rowLink, "_blank", "noopener,noreferrer");
+      });
+    }
 
     const cellDefs = [
       { key: "rank", text: `${idx + 1}` },
@@ -221,6 +273,11 @@ function renderTable(){
         span.className = `source-pill ${sourceClassName(cell.text)}`;
         span.textContent = cell.text;
         td.appendChild(span);
+      }else if(cell.key === "team" && rowLink){
+        appendLinkedText(td, cell.text, rowLink, "inline-link team-link");
+      }else if(cell.key === "notes" && rowLink){
+        const noteLabel = cell.text && cell.text !== "--" ? cell.text : "Open";
+        appendLinkedText(td, noteLabel, rowLink, "inline-link notes-link");
       }else{
         td.textContent = cell.text;
       }
