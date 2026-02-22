@@ -44,6 +44,7 @@ jobs:
       - name: Materialize private labels
         env:
           PRIVATE_TEST_LABELS_CSV: ${{ secrets.PRIVATE_TEST_LABELS_CSV }}
+          PRIVATE_TEST_LABELS_CSV_GZIP_B64: ${{ secrets.PRIVATE_TEST_LABELS_CSV_GZIP_B64 }}
           TEST_LABELS_KEY: ${{ secrets.TEST_LABELS_KEY }}
           PRIVATE_DATA_METHOD: ${{ secrets.PRIVATE_DATA_METHOD }}
           GOOGLE_DRIVE_FILE_ID: ${{ secrets.GOOGLE_DRIVE_FILE_ID }}

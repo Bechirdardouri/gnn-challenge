@@ -8,6 +8,10 @@ To keep private test labels safe and prevent other teams from seeing raw predict
 
 `encryption/public_key.pem` is probably still a placeholder. Ask organizers for the real key.
 
+## Private labels secret says "Value is too large".
+
+Use `PRIVATE_TEST_LABELS_CSV_GZIP_B64` instead of `PRIVATE_TEST_LABELS_CSV`.
+
 ## Can I submit plaintext CSV in a PR?
 
 No. Live scoring is designed for encrypted submissions only.

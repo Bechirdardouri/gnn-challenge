@@ -17,6 +17,9 @@ python encryption/generate_keys.py --force
 Preferred:
 - Set `PRIVATE_TEST_LABELS_CSV` (full CSV content) in GitHub Secrets
 
+If secret value is too large (GitHub 48 KB limit):
+- Set `PRIVATE_TEST_LABELS_CSV_GZIP_B64` (gzip+base64 encoded CSV content) instead.
+
 Legacy-compatible option:
 - Keep `data/test_labels.csv.enc` in the repo and set `TEST_LABELS_KEY`
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import gzip
 import os
 import subprocess
 import sys
@@ -39,6 +41,14 @@ def parse_args() -> argparse.Namespace:
         "--private-test-labels-csv",
         default=os.getenv("PRIVATE_TEST_LABELS_CSV", ""),
         help="Raw private labels CSV content. Defaults to PRIVATE_TEST_LABELS_CSV env var.",
+    )
+    parser.add_argument(
+        "--private-test-labels-csv-gzip-b64",
+        default=os.getenv("PRIVATE_TEST_LABELS_CSV_GZIP_B64", ""),
+        help=(
+            "Gzip+base64 encoded private labels CSV. "
+            "Defaults to PRIVATE_TEST_LABELS_CSV_GZIP_B64 env var."
+        ),
     )
     parser.add_argument(
         "--test-labels-key",
@@ -102,6 +112,21 @@ def try_from_inline_secret(raw_csv: str, output_path: Path) -> bool:
     output_path.write_text(raw_csv, encoding="utf-8")
     print("Materialized labels from PRIVATE_TEST_LABELS_CSV.")
     return True
+
+
+def try_from_inline_secret_gzip_b64(encoded: str, output_path: Path) -> bool:
+    if not encoded.strip():
+        return False
+    try:
+        encoded_clean = "".join(encoded.split())
+        raw = gzip.decompress(base64.b64decode(encoded_clean.encode("utf-8")))
+        output_path.write_bytes(raw)
+        print("Materialized labels from PRIVATE_TEST_LABELS_CSV_GZIP_B64.")
+        return True
+    except Exception as exc:  # noqa: BLE001
+        print(f"Failed to decode PRIVATE_TEST_LABELS_CSV_GZIP_B64: {exc}")
+        output_path.unlink(missing_ok=True)
+        return False
 
 
 def try_from_legacy_encrypted_file(enc_path: Path, key: str, output_path: Path) -> bool:
@@ -188,6 +213,8 @@ def main() -> int:
 
     if try_from_inline_secret(args.private_test_labels_csv, output_path):
         source = "inline_secret"
+    elif try_from_inline_secret_gzip_b64(args.private_test_labels_csv_gzip_b64, output_path):
+        source = "inline_secret_gzip_b64"
     else:
         used_legacy = try_from_legacy_encrypted_file(
             encrypted_labels_path, args.test_labels_key, output_path
@@ -209,7 +236,8 @@ def main() -> int:
     if not source:
         msg = (
             "Unable to materialize private labels. Configure one of: "
-            "PRIVATE_TEST_LABELS_CSV, TEST_LABELS_KEY (+ data/test_labels.csv.enc), "
+            "PRIVATE_TEST_LABELS_CSV, PRIVATE_TEST_LABELS_CSV_GZIP_B64, "
+            "TEST_LABELS_KEY (+ data/test_labels.csv.enc), "
             "or PRIVATE_DATA_METHOD with its required source secrets."
         )
         print(msg)
