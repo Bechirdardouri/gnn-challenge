@@ -35,6 +35,7 @@ Key guarantees:
 
 General:
 - `PRIVATE_TEST_LABELS_CSV` (preferred) or external private-data source secrets.
+- `TEST_LABELS_KEY` (legacy option with `data/test_labels.csv.enc`).
 - `PRIVATE_DATA_METHOD` (`google_drive` | `url` | `s3`) if not using inline labels.
 - `GOOGLE_DRIVE_FILE_ID`, `GOOGLE_CREDENTIALS_JSON`, `PRIVATE_DATA_URL`, `PRIVATE_DATA_S3_URI` as needed.
 

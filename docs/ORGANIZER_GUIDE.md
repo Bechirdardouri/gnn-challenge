@@ -17,6 +17,9 @@ python encryption/generate_keys.py --force
 Preferred:
 - Set `PRIVATE_TEST_LABELS_CSV` (full CSV content) in GitHub Secrets
 
+Legacy-compatible option:
+- Keep `data/test_labels.csv.enc` in the repo and set `TEST_LABELS_KEY`
+
 Or use external source:
 - `PRIVATE_DATA_METHOD` = `google_drive` | `url` | `s3`
 - plus matching source secrets (`GOOGLE_DRIVE_FILE_ID`, `GOOGLE_CREDENTIALS_JSON`, `PRIVATE_DATA_URL`, `PRIVATE_DATA_S3_URI`)

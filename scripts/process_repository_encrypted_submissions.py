@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
         default=str(ROOT / "submissions"),
         help="Directory to scan for .enc submissions.",
     )
+    parser.add_argument(
+        "--include-plaintext-csv",
+        action="store_true",
+        help="Also score plaintext CSV files in submissions/ (legacy/backfill mode).",
+    )
     parser.add_argument("--private-key-path", required=True, help="Path to private key PEM.")
     parser.add_argument(
         "--private-key-password",
@@ -79,6 +84,16 @@ def parse_team_and_model(path: Path) -> tuple[str, str]:
     return team.strip() or "unknown_team", model.strip()
 
 
+def is_plaintext_submission_csv(path: Path) -> bool:
+    if path.suffix.lower() != ".csv":
+        return False
+    if path.name.lower() == "sample_submission.csv":
+        return False
+    if ".enc." in path.name.lower():
+        return False
+    return True
+
+
 def main() -> int:
     args = parse_args()
     submissions_dir = Path(args.submissions_dir)
@@ -91,15 +106,20 @@ def main() -> int:
     leaderboard_rows = read_leaderboard(args.leaderboard_path)
     seen_submission_ids = {row.get("submission_id", "") for row in leaderboard_rows}
 
-    files = sorted(submissions_dir.glob("*.enc")) + sorted(submissions_dir.glob("**/*.enc"))
-    files = sorted(set(files))
+    enc_files = sorted(submissions_dir.glob("*.enc")) + sorted(submissions_dir.glob("**/*.enc"))
+    enc_files = sorted(set(enc_files))
+
+    csv_files: list[Path] = []
+    if args.include_plaintext_csv:
+        all_csv = sorted(submissions_dir.glob("*.csv")) + sorted(submissions_dir.glob("**/*.csv"))
+        csv_files = sorted({p for p in all_csv if is_plaintext_submission_csv(p)})
 
     processed = 0
     skipped = 0
     failed = 0
     changed = False
 
-    for path in files:
+    for path in enc_files:
         try:
             enc_bytes = path.read_bytes()
             submission_id = f"enc_sha256:{sha256_bytes(enc_bytes)}"
@@ -122,6 +142,40 @@ def main() -> int:
                     "model": model,
                     "score": f"{score:.8f}",
                     "source": "encrypted_repo_scan",
+                    "submission_id": submission_id,
+                    "pr_number": "",
+                    "notes": str(path.relative_to(ROOT)),
+                }
+            )
+            seen_submission_ids.add(submission_id)
+            processed += 1
+            changed = True
+            print(f"Processed {path}: score={score:.8f}")
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            print(f"Failed {path}: {exc}")
+
+    for path in csv_files:
+        try:
+            raw_csv = path.read_bytes()
+            submission_id = f"csv_sha256:{sha256_bytes(raw_csv)}"
+            if submission_id in seen_submission_ids:
+                skipped += 1
+                continue
+
+            preds_raw = pd.read_csv(io.BytesIO(raw_csv))
+            preds = normalize_submission_columns(preds_raw)
+            validate_submission_df(preds, test_nodes)
+            score = score_submission_df(preds, labels, metric="auto")
+
+            team, model = parse_team_and_model(path)
+            leaderboard_rows.append(
+                {
+                    "timestamp_utc": format_utc_now(),
+                    "team": team,
+                    "model": model,
+                    "score": f"{score:.8f}",
+                    "source": "plaintext_repo_scan",
                     "submission_id": submission_id,
                     "pr_number": "",
                     "notes": str(path.relative_to(ROOT)),

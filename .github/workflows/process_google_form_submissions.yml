@@ -25,6 +25,7 @@ jobs:
       - name: Materialize private labels
         env:
           PRIVATE_TEST_LABELS_CSV: ${{ secrets.PRIVATE_TEST_LABELS_CSV }}
+          TEST_LABELS_KEY: ${{ secrets.TEST_LABELS_KEY }}
           PRIVATE_DATA_METHOD: ${{ secrets.PRIVATE_DATA_METHOD }}
           GOOGLE_DRIVE_FILE_ID: ${{ secrets.GOOGLE_DRIVE_FILE_ID }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
@@ -34,6 +35,11 @@ jobs:
           mkdir -p data/private
           if [ -n "${PRIVATE_TEST_LABELS_CSV}" ]; then
             printf '%s' "${PRIVATE_TEST_LABELS_CSV}" > data/private/test_labels.csv
+          elif [ -n "${TEST_LABELS_KEY}" ] && [ -f data/test_labels.csv.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in data/test_labels.csv.enc \
+              -out data/private/test_labels.csv \
+              -pass pass:${TEST_LABELS_KEY}
           else
             python scripts/download_private_data.py \
               --method "${PRIVATE_DATA_METHOD:-google_drive}" \

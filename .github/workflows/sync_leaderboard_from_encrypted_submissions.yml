@@ -6,6 +6,8 @@ on:
     paths:
       - "submissions/*.enc"
       - "submissions/**/*.enc"
+      - "submissions/*.csv"
+      - "submissions/**/*.csv"
   workflow_dispatch:
 
 permissions:
@@ -42,6 +44,7 @@ jobs:
       - name: Materialize private labels
         env:
           PRIVATE_TEST_LABELS_CSV: ${{ secrets.PRIVATE_TEST_LABELS_CSV }}
+          TEST_LABELS_KEY: ${{ secrets.TEST_LABELS_KEY }}
           PRIVATE_DATA_METHOD: ${{ secrets.PRIVATE_DATA_METHOD }}
           GOOGLE_DRIVE_FILE_ID: ${{ secrets.GOOGLE_DRIVE_FILE_ID }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
@@ -51,6 +54,11 @@ jobs:
           mkdir -p data/private
           if [ -n "${PRIVATE_TEST_LABELS_CSV}" ]; then
             printf '%s' "${PRIVATE_TEST_LABELS_CSV}" > data/private/test_labels.csv
+          elif [ -n "${TEST_LABELS_KEY}" ] && [ -f data/test_labels.csv.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in data/test_labels.csv.enc \
+              -out data/private/test_labels.csv \
+              -pass pass:${TEST_LABELS_KEY}
           else
             python scripts/download_private_data.py \
               --method "${PRIVATE_DATA_METHOD:-google_drive}" \
@@ -62,12 +70,13 @@ jobs:
               --force
           fi
 
-      - name: Process encrypted submissions in repository
+      - name: Process repository submissions
         env:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: |
           python scripts/process_repository_encrypted_submissions.py \
             --submissions-dir "submissions" \
+            --include-plaintext-csv \
             --private-key-path ".secrets/private_key.pem" \
             --private-key-password "${PRIVATE_KEY_PASSWORD}" \
             --private-labels-path "data/private/test_labels.csv" \

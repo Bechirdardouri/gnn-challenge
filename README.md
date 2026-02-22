@@ -51,6 +51,7 @@ Note:
 - Optional Google Form pipeline: `.github/workflows/process_google_form_submissions.yml`
 - Leaderboard rendering/publishing: `.github/workflows/publish_leaderboard.yml`
 - Merge-time fallback sync (encrypted submissions): `.github/workflows/sync_leaderboard_from_encrypted_submissions.yml`
+  - also supports legacy plaintext CSV backfill on `main` for existing public submissions
 - Shared validation/scoring utilities: `competition/`
 - Encryption tools: `encryption/`
 - Starter baselines: `starter_code/`
@@ -89,6 +90,7 @@ python competition/evaluate.py submissions/sota_ensemble_submission.csv data/pri
 - Public repo stores encrypted submissions (`.enc`) only.
 - Decryption happens only in GitHub Actions using `PRIVATE_KEY_PEM`.
 - Private labels are provided at runtime via secrets.
+- Legacy private-label decrypt is supported via `TEST_LABELS_KEY` + `data/test_labels.csv.enc`.
 - Trusted base-branch code performs evaluation.
 - Fallback merge-time sync ensures merged encrypted submissions are reflected on leaderboard.
 
