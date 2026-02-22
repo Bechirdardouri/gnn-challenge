@@ -211,10 +211,10 @@ def main() -> int:
 
     source = ""
 
-    if try_from_inline_secret(args.private_test_labels_csv, output_path):
-        source = "inline_secret"
-    elif try_from_inline_secret_gzip_b64(args.private_test_labels_csv_gzip_b64, output_path):
+    if try_from_inline_secret_gzip_b64(args.private_test_labels_csv_gzip_b64, output_path):
         source = "inline_secret_gzip_b64"
+    elif try_from_inline_secret(args.private_test_labels_csv, output_path):
+        source = "inline_secret"
     else:
         used_legacy = try_from_legacy_encrypted_file(
             encrypted_labels_path, args.test_labels_key, output_path
