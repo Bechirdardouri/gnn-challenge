@@ -207,14 +207,24 @@ def main() -> int:
                 source = f"external:{args.private_data_method}"
 
     if not source:
-        print(
+        msg = (
             "Unable to materialize private labels. Configure one of: "
             "PRIVATE_TEST_LABELS_CSV, TEST_LABELS_KEY (+ data/test_labels.csv.enc), "
             "or PRIVATE_DATA_METHOD with its required source secrets."
         )
+        print(msg)
+        print(f"::error::{msg}")
         return 1
 
-    validate_labels(output_path, test_nodes_path)
+    try:
+        validate_labels(output_path, test_nodes_path)
+    except Exception as exc:  # noqa: BLE001
+        output_path.unlink(missing_ok=True)
+        msg = f"Private labels validation failed: {exc}"
+        print(msg)
+        print(f"::error::{msg}")
+        return 1
+
     print(f"Private labels ready at: {output_path} (source={source})")
     return 0
 
