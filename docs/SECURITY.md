@@ -53,6 +53,7 @@ Google Form:
 - Restrict who can edit workflows and secrets.
 - Use branch protections on `main`.
 - Keep workflows pinned to trusted actions versions.
+- Keep private-label materialization centralized (`scripts/materialize_private_labels.py`) to avoid drift.
 
 ## Related Docs
 

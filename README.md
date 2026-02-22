@@ -83,7 +83,20 @@ python competition/render_leaderboard.py
 
 # Evaluate locally (when private labels are available)
 python competition/evaluate.py submissions/sota_ensemble_submission.csv data/private/test_labels.csv --metric auto
+
+# Materialize private labels from configured secrets/sources
+python scripts/materialize_private_labels.py --output data/private/test_labels.csv
 ```
+
+## If Leaderboard Shows "No Results"
+
+1. Open GitHub Actions and run:
+   - `Sync Leaderboard From Encrypted Submissions` (manual `workflow_dispatch` run)
+2. Confirm one private-label source is configured:
+   - `PRIVATE_TEST_LABELS_CSV` (preferred), or
+   - `TEST_LABELS_KEY` with `data/test_labels.csv.enc`, or
+   - `PRIVATE_DATA_METHOD` + matching source secrets
+3. Confirm secure PR submissions are encrypted `.enc` files (plaintext CSVs in PR are not scored).
 
 ## Security Model (Short Version)
 

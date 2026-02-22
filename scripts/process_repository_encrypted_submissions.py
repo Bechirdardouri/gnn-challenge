@@ -131,6 +131,11 @@ def main() -> int:
         all_csv = sorted(submissions_dir.glob("*.csv")) + sorted(submissions_dir.glob("**/*.csv"))
         csv_files = sorted({p for p in all_csv if is_plaintext_submission_csv(p)})
 
+    print(
+        f"Discovered candidate files: encrypted={len(enc_files)}, plaintext_csv={len(csv_files)} "
+        f"(include_plaintext_csv={args.include_plaintext_csv})"
+    )
+
     processed = 0
     skipped = 0
     failed = 0
@@ -217,6 +222,8 @@ def main() -> int:
         "Repository encrypted scan summary: "
         f"processed={processed}, skipped={skipped}, failed={failed}"
     )
+    if processed == 0 and failed == 0:
+        print("No new valid submissions were scored.")
     if args.strict and failed > 0:
         return 1
     return 0

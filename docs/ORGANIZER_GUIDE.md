@@ -35,6 +35,9 @@ Or use external source:
 - Leaderboard publish render:
   - `.github/workflows/publish_leaderboard.yml`
 
+Private-label materialization is shared by all workflows via:
+- `scripts/materialize_private_labels.py`
+
 ## 4. Optional Google Form Pipeline
 
 - Setup details:
@@ -55,6 +58,7 @@ Or use external source:
 ```bash
 python check_setup.py
 python competition/render_leaderboard.py
+python scripts/materialize_private_labels.py --output data/private/test_labels.csv
 ```
 
 If you have local private labels:

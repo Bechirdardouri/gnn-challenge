@@ -8,6 +8,9 @@ on:
       - "submissions/**/*.enc"
       - "submissions/*.csv"
       - "submissions/**/*.csv"
+      - "scripts/process_repository_encrypted_submissions.py"
+      - "scripts/materialize_private_labels.py"
+      - ".github/workflows/sync_leaderboard_from_encrypted_submissions.yml"
   workflow_dispatch:
 
 permissions:
@@ -52,24 +55,10 @@ jobs:
           PRIVATE_DATA_URL: ${{ secrets.PRIVATE_DATA_URL }}
           PRIVATE_DATA_S3_URI: ${{ secrets.PRIVATE_DATA_S3_URI }}
         run: |
-          mkdir -p data/private
-          if [ -n "${PRIVATE_TEST_LABELS_CSV}" ]; then
-            printf '%s' "${PRIVATE_TEST_LABELS_CSV}" > data/private/test_labels.csv
-          elif [ -n "${TEST_LABELS_KEY}" ] && [ -f data/test_labels.csv.enc ]; then
-            openssl enc -d -aes-256-cbc -pbkdf2 \
-              -in data/test_labels.csv.enc \
-              -out data/private/test_labels.csv \
-              -pass pass:${TEST_LABELS_KEY}
-          else
-            python scripts/download_private_data.py \
-              --method "${PRIVATE_DATA_METHOD:-google_drive}" \
-              --output data/private/test_labels.csv \
-              --google-drive-file-id "${GOOGLE_DRIVE_FILE_ID}" \
-              --google-credentials-json "${GOOGLE_CREDENTIALS_JSON}" \
-              --url "${PRIVATE_DATA_URL}" \
-              --s3-uri "${PRIVATE_DATA_S3_URI}" \
-              --force
-          fi
+          python scripts/materialize_private_labels.py \
+            --output "data/private/test_labels.csv" \
+            --test-nodes-path "data/test.csv" \
+            --encrypted-labels-path "data/test_labels.csv.enc"
 
       - name: Process repository submissions
         env:

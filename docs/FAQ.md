@@ -32,6 +32,7 @@ If leaderboard does not update after merge:
   - `Publish Leaderboard`
 - confirm required secrets are configured (especially `PRIVATE_KEY_PEM` and private labels source)
 - if using legacy encrypted labels file (`data/test_labels.csv.enc`), ensure `TEST_LABELS_KEY` is set
+- run `Sync Leaderboard From Encrypted Submissions` manually (`workflow_dispatch`) to backfill existing submissions
 
 ## I am an organizer. Where do I start?
 

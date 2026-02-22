@@ -28,7 +28,12 @@ Short guide to where things live.
 - `publish_leaderboard.yml`
   - renders markdown/json leaderboard artifacts on updates
 - `sync_leaderboard_from_encrypted_submissions.yml`
-  - fallback scorer that syncs leaderboard from merged `.enc` files
+  - fallback scorer that syncs leaderboard from merged submissions (`.enc` + optional legacy plaintext CSV backfill)
+
+## Operational Script
+
+- `scripts/materialize_private_labels.py`
+  - resolves private labels from secrets/legacy encrypted file/external source and validates ID coverage
 
 ## Data files
 
