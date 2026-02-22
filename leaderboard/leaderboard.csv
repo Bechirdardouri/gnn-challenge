@@ -1,1 +1,4 @@
 timestamp_utc,team,model,score,source,submission_id,pr_number,notes
+2026-02-22T14:11:17Z,sota_ensemble_submission,,0.31830701,plaintext_repo_scan,csv_sha256:d01a34f5571c87bfc13f59137cbc1ca9139d075b085f554e3a36f9a93564b8d6,,submissions/sota_ensemble_submission.csv
+2026-02-22T14:11:17Z,sota_submission_v2,,0.31765124,plaintext_repo_scan,csv_sha256:d411e12dabbd60372dec2ae828c4abfa77011d4f9a8644f24d15cde283d251ba,,submissions/sota_submission_v2.csv
+2026-02-22T14:11:17Z,sota_submission_v3,,0.31890027,plaintext_repo_scan,csv_sha256:80fee7f0ac5ee5e29f017c1ea9575e997e5a48c0aa7e9cbd7733d2c8bba4cbd1,,submissions/sota_submission_v3.csv
