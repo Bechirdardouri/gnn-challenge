@@ -1,37 +1,74 @@
-/* Minimal, dependency-free leaderboard UI:
- * - loads leaderboard.json (fallback to ../leaderboard/leaderboard.csv)
- * - search + filters (model, source, date)
- * - sortable columns
- * - column toggles
+/* Leaderboard UI:
+ * - loads docs/leaderboard.json (fallback ../leaderboard/leaderboard.csv)
+ * - search + filters + sortable columns + optional column visibility
+ * - renders summary cards and a top-3 podium
  */
 function parseCSV(text){
   const lines = text.trim().split(/\r?\n/);
-  if(!lines.length) return [];
+  if(!lines.length){ return []; }
   const header = lines[0].split(",");
   const rows = [];
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim()) continue;
+
+  for(let i = 1; i < lines.length; i++){
+    if(!lines[i].trim()){ continue; }
     const cols = [];
-    let cur="", inQ=false;
-    for(let j=0;j<lines[i].length;j++){
+    let cur = "";
+    let inQ = false;
+
+    for(let j = 0; j < lines[i].length; j++){
       const ch = lines[i][j];
       if(ch === '"'){ inQ = !inQ; continue; }
-      if(ch === "," && !inQ){ cols.push(cur); cur=""; continue; }
+      if(ch === "," && !inQ){ cols.push(cur); cur = ""; continue; }
       cur += ch;
     }
     cols.push(cur);
+
     const obj = {};
-    header.forEach((h, idx) => obj[h] = (cols[idx] ?? "").trim());
+    header.forEach((h, idx) => { obj[h] = (cols[idx] ?? "").trim(); });
     rows.push(obj);
   }
   return rows;
 }
 
+function toLower(value){
+  return (value ?? "").toString().toLowerCase();
+}
+
+function parseUtc(value){
+  const d = new Date(value);
+  if(Number.isNaN(d.getTime())){ return null; }
+  return d;
+}
+
 function daysAgo(dateStr){
-  const d = new Date(dateStr);
-  if(isNaN(d.getTime())) return Infinity;
-  const now = new Date();
-  return (now - d) / (1000*60*60*24);
+  const d = parseUtc(dateStr);
+  if(!d){ return Infinity; }
+  return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+}
+
+function formatScore(row){
+  if(Number.isFinite(row.score_value)){ return row.score_value.toFixed(8); }
+  if(row.score_text){ return row.score_text; }
+  return "--";
+}
+
+function formatUtc(dateStr){
+  const d = parseUtc(dateStr);
+  if(!d){ return "--"; }
+  const value = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(d);
+  return `${value} UTC`;
+}
+
+function sourceClassName(source){
+  return `source-${toLower(source).replace(/[^a-z0-9_-]/g, "_") || "manual"}`;
 }
 
 const state = {
@@ -42,46 +79,174 @@ const state = {
   hiddenCols: new Set(),
 };
 
+function sortRows(rows){
+  const dir = state.sortDir === "asc" ? 1 : -1;
+  const key = state.sortKey;
+
+  return [...rows].sort((a, b) => {
+    if(key === "score"){
+      const av = Number.isFinite(a.score_value) ? a.score_value : Number.NEGATIVE_INFINITY;
+      const bv = Number.isFinite(b.score_value) ? b.score_value : Number.NEGATIVE_INFINITY;
+      return (av - bv) * dir;
+    }
+
+    if(key === "rank"){
+      const av = Number.isFinite(a.score_value) ? a.score_value : Number.NEGATIVE_INFINITY;
+      const bv = Number.isFinite(b.score_value) ? b.score_value : Number.NEGATIVE_INFINITY;
+      const rankDir = state.sortDir === "asc" ? -1 : 1;
+      return (av - bv) * rankDir;
+    }
+
+    if(key === "timestamp_utc"){
+      const av = parseUtc(a.timestamp_utc)?.getTime() ?? Number.NEGATIVE_INFINITY;
+      const bv = parseUtc(b.timestamp_utc)?.getTime() ?? Number.NEGATIVE_INFINITY;
+      return (av - bv) * dir;
+    }
+
+    const av = toLower(a[key]);
+    const bv = toLower(b[key]);
+    if(av < bv){ return -1 * dir; }
+    if(av > bv){ return 1 * dir; }
+    return 0;
+  });
+}
+
+function updateSortIndicators(){
+  document.querySelectorAll("#tbl thead th").forEach((th) => {
+    const key = th.dataset.key || "";
+    if(key === state.sortKey){
+      th.dataset.order = state.sortDir;
+      th.setAttribute("aria-sort", state.sortDir === "asc" ? "ascending" : "descending");
+    }else{
+      th.dataset.order = "";
+      th.setAttribute("aria-sort", "none");
+    }
+  });
+}
+
+function updateStatus(rows){
+  const status = document.getElementById("status");
+  status.textContent = rows.length ? `${rows.length} result(s)` : "No results";
+}
+
+function renderSummary(rows){
+  const statSubmissions = document.getElementById("statSubmissions");
+  const statTopScore = document.getElementById("statTopScore");
+  const statLeader = document.getElementById("statLeader");
+  const updatedAt = document.getElementById("updatedAt");
+
+  statSubmissions.textContent = `${rows.length}`;
+
+  const ordered = [...rows].sort((a, b) => {
+    const av = Number.isFinite(a.score_value) ? a.score_value : Number.NEGATIVE_INFINITY;
+    const bv = Number.isFinite(b.score_value) ? b.score_value : Number.NEGATIVE_INFINITY;
+    if(av !== bv){ return bv - av; }
+    const ad = parseUtc(a.timestamp_utc)?.getTime() ?? 0;
+    const bd = parseUtc(b.timestamp_utc)?.getTime() ?? 0;
+    return bd - ad;
+  });
+
+  const leader = ordered[0];
+  statTopScore.textContent = leader ? formatScore(leader) : "--";
+  statLeader.textContent = leader ? leader.team : "--";
+
+  const latest = rows
+    .map((row) => parseUtc(row.timestamp_utc))
+    .filter(Boolean)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  updatedAt.textContent = latest ? `Updated: ${formatUtc(latest.toISOString())}` : "Updated: --";
+}
+
+function renderPodium(rows){
+  const ordered = [...rows].sort((a, b) => {
+    const av = Number.isFinite(a.score_value) ? a.score_value : Number.NEGATIVE_INFINITY;
+    const bv = Number.isFinite(b.score_value) ? b.score_value : Number.NEGATIVE_INFINITY;
+    if(av !== bv){ return bv - av; }
+    const ad = parseUtc(a.timestamp_utc)?.getTime() ?? 0;
+    const bd = parseUtc(b.timestamp_utc)?.getTime() ?? 0;
+    return bd - ad;
+  });
+
+  const slots = [
+    { rank: 1, row: ordered[0], cls: "first" },
+    { rank: 2, row: ordered[1], cls: "second" },
+    { rank: 3, row: ordered[2], cls: "third" },
+  ];
+
+  slots.forEach((slot) => {
+    const team = document.getElementById(`podium${slot.rank}Team`);
+    const score = document.getElementById(`podium${slot.rank}Score`);
+    const item = document.querySelector(`.podium-item.${slot.cls}`);
+    if(!team || !score || !item){ return; }
+
+    if(!slot.row){
+      team.textContent = "--";
+      score.textContent = "--";
+      item.classList.add("empty");
+      return;
+    }
+
+    team.textContent = slot.row.team || "--";
+    score.textContent = formatScore(slot.row);
+    item.classList.remove("empty");
+  });
+}
+
 function renderTable(){
   const tbody = document.querySelector("#tbl tbody");
   tbody.innerHTML = "";
-  const rows = state.filtered;
 
-  rows.forEach((r, idx) => {
+  state.filtered.forEach((row, idx) => {
     const tr = document.createElement("tr");
-    const rank = idx + 1;
-    const cells = [
-      ["rank", rank],
-      ["team", r.team],
-      ["model", r.model],
-      ["score", r.score],
-      ["source", r.source],
-      ["timestamp_utc", r.timestamp_utc],
-      ["notes", r.notes || ""],
+    tr.className = "row-in";
+    tr.style.animationDelay = `${Math.min(idx * 26, 320)}ms`;
+
+    const cellDefs = [
+      { key: "rank", text: `${idx + 1}` },
+      { key: "team", text: row.team || "--" },
+      { key: "model", text: row.model || "--" },
+      { key: "score", text: formatScore(row) },
+      { key: "source", text: row.source || "manual" },
+      { key: "timestamp_utc", text: formatUtc(row.timestamp_utc), title: row.timestamp_utc || "--" },
+      { key: "notes", text: row.notes || "--" },
     ];
-    cells.forEach(([k, v]) => {
+
+    cellDefs.forEach((cell) => {
       const td = document.createElement("td");
-      td.dataset.key = k;
-      td.textContent = v;
-      if(k === "rank") td.classList.add("rank");
-      if(k === "score") td.classList.add("score");
-      if(state.hiddenCols.has(k)) td.style.display = "none";
+      td.dataset.key = cell.key;
+      td.classList.add(cell.key);
+
+      if(cell.key === "source"){
+        const span = document.createElement("span");
+        span.className = `source-pill ${sourceClassName(cell.text)}`;
+        span.textContent = cell.text;
+        td.appendChild(span);
+      }else{
+        td.textContent = cell.text;
+      }
+
+      if(cell.title){
+        td.title = cell.title;
+      }
+      if(state.hiddenCols.has(cell.key)){
+        td.style.display = "none";
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   });
 
-  document.querySelectorAll("#tbl thead th").forEach(th => {
-    const k = th.dataset.key;
-    th.style.display = state.hiddenCols.has(k) ? "none" : "";
+  document.querySelectorAll("#tbl thead th").forEach((th) => {
+    const key = th.dataset.key || "";
+    th.style.display = state.hiddenCols.has(key) ? "none" : "";
   });
 
-  document.getElementById("status").textContent =
-    rows.length ? `${rows.length} result(s)` : "No results";
+  updateSortIndicators();
+  updateStatus(state.filtered);
 }
 
 function applyFilters(){
-  const q = document.getElementById("search").value.toLowerCase().trim();
+  const query = toLower(document.getElementById("search").value.trim());
   const model = document.getElementById("modelFilter").value;
   const source = document.getElementById("sourceFilter").value;
   const date = document.getElementById("dateFilter").value;
@@ -89,126 +254,147 @@ function applyFilters(){
   let rows = [...state.rows];
 
   if(model !== "all"){
-    rows = rows.filter(r => (r.model || "").toLowerCase() === model);
+    rows = rows.filter((row) => toLower(row.model) === model);
   }
 
   if(source !== "all"){
-    rows = rows.filter(r => (r.source || "").toLowerCase() === source);
+    rows = rows.filter((row) => toLower(row.source) === source);
   }
 
   if(date !== "all"){
-    const maxDays = (date === "last30") ? 30 : 180;
-    rows = rows.filter(r => daysAgo(r.timestamp_utc) <= maxDays);
+    const maxDays = date === "last30" ? 30 : 180;
+    rows = rows.filter((row) => daysAgo(row.timestamp_utc) <= maxDays);
   }
 
-  if(q){
-    rows = rows.filter(r => {
-      const hay = `${r.team} ${r.model} ${r.source} ${r.notes} ${r.timestamp_utc}`.toLowerCase();
-      return hay.includes(q);
+  if(query){
+    rows = rows.filter((row) => {
+      const haystack = toLower(`${row.team} ${row.model} ${row.source} ${row.notes} ${row.timestamp_utc}`);
+      return haystack.includes(query);
     });
   }
 
-  const k = state.sortKey;
-  const dir = state.sortDir === "asc" ? 1 : -1;
-  rows.sort((a,b) => {
-    let av = a[k], bv = b[k];
-    if(k === "score"){
-      av = parseFloat(av); bv = parseFloat(bv);
-      if(isNaN(av)) av = -Infinity;
-      if(isNaN(bv)) bv = -Infinity;
-      return (av - bv) * dir;
-    }
-    av = (av ?? "").toString().toLowerCase();
-    bv = (bv ?? "").toString().toLowerCase();
-    if(av < bv) return -1 * dir;
-    if(av > bv) return  1 * dir;
-    return 0;
-  });
-
-  state.filtered = rows;
+  state.filtered = sortRows(rows);
   renderTable();
+  renderPodium(state.filtered);
 }
 
 function setupColumnToggles(){
-  const cols = [
-    ["rank","Rank"],
-    ["team","Team"],
-    ["model","Model"],
-    ["score","Score"],
-    ["source","Source"],
-    ["timestamp_utc","Date (UTC)"],
-    ["notes","Notes"],
+  const columns = [
+    ["rank", "Rank"],
+    ["team", "Team"],
+    ["model", "Model"],
+    ["score", "Score"],
+    ["source", "Source"],
+    ["timestamp_utc", "Date (UTC)"],
+    ["notes", "Notes"],
   ];
+
   const wrap = document.getElementById("columnToggles");
   wrap.innerHTML = "";
-  cols.forEach(([k,label]) => {
-    const lab = document.createElement("label");
+
+  columns.forEach(([key, label]) => {
+    const chip = document.createElement("label");
+    chip.className = "toggle-pill";
+
     const cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.checked = !state.hiddenCols.has(k);
+    cb.checked = !state.hiddenCols.has(key);
     cb.addEventListener("change", () => {
-      if(cb.checked) state.hiddenCols.delete(k);
-      else state.hiddenCols.add(k);
+      if(cb.checked){ state.hiddenCols.delete(key); }
+      else{ state.hiddenCols.add(key); }
       renderTable();
     });
-    lab.appendChild(cb);
-    const sp = document.createElement("span");
-    sp.textContent = label;
-    lab.appendChild(sp);
-    wrap.appendChild(lab);
+
+    const text = document.createElement("span");
+    text.textContent = label;
+
+    chip.appendChild(cb);
+    chip.appendChild(text);
+    wrap.appendChild(chip);
   });
 }
 
 function setupSorting(){
-  document.querySelectorAll("#tbl thead th").forEach(th => {
-    th.addEventListener("click", () => {
-      const k = th.dataset.key;
-      if(!k) return;
-      if(state.sortKey === k){
-        state.sortDir = (state.sortDir === "asc") ? "desc" : "asc";
+  document.querySelectorAll("#tbl thead th").forEach((th) => {
+    const applySort = () => {
+      const key = th.dataset.key;
+      if(!key){ return; }
+      if(state.sortKey === key){
+        state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
       }else{
-        state.sortKey = k;
-        state.sortDir = (k === "score") ? "desc" : "asc";
+        state.sortKey = key;
+        state.sortDir = key === "score" || key === "rank" ? "desc" : "asc";
       }
       applyFilters();
+    };
+
+    th.tabIndex = 0;
+    th.addEventListener("click", applySort);
+    th.addEventListener("keydown", (event) => {
+      if(event.key === "Enter" || event.key === " "){
+        event.preventDefault();
+        applySort();
+      }
     });
   });
 }
 
-function normalizeRows(rows){
-  return rows
-    .filter(r => r.team)
-    .map(r => ({
-      timestamp_utc: r.timestamp_utc || "",
-      team: r.team || "",
-      model: (r.model || "").toLowerCase(),
-      score: r.score || "",
-      source: (r.source || "manual").toLowerCase(),
-      notes: r.notes || "",
-    }));
+function appendSelectOptions(selectId, rows, field){
+  const select = document.getElementById(selectId);
+  const values = new Map();
+
+  rows.forEach((row) => {
+    const raw = (row[field] ?? "").toString().trim();
+    const lowered = toLower(raw);
+    if(!lowered || values.has(lowered)){ return; }
+    values.set(lowered, raw);
+  });
+
+  [...values.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: "base" }))
+    .forEach(([value, label]) => {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      select.appendChild(opt);
+    });
 }
 
-function appendSelectOptions(selectId, values){
-  const sel = document.getElementById(selectId);
-  [...new Set(values.filter(Boolean))].sort().forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    sel.appendChild(opt);
-  });
+function normalizeRows(rows){
+  return rows
+    .filter((row) => (row.team ?? "").toString().trim())
+    .map((row) => {
+      const scoreText = (row.score ?? "").toString().trim();
+      const parsed = Number.parseFloat(scoreText);
+      return {
+        timestamp_utc: (row.timestamp_utc ?? "").toString().trim(),
+        team: (row.team ?? "").toString().trim(),
+        model: (row.model ?? "").toString().trim(),
+        source: (row.source ?? "manual").toString().trim(),
+        notes: (row.notes ?? "").toString().trim(),
+        score_text: scoreText,
+        score_value: Number.isFinite(parsed) ? parsed : Number.NaN,
+      };
+    });
 }
 
 async function loadRows(){
   try{
-    const jsonRes = await fetch("leaderboard.json", {cache:"no-store"});
+    const jsonRes = await fetch("leaderboard.json", { cache: "no-store" });
     if(jsonRes.ok){
       const jsonRows = await jsonRes.json();
-      if(Array.isArray(jsonRows)) return normalizeRows(jsonRows);
+      if(Array.isArray(jsonRows)){
+        return normalizeRows(jsonRows);
+      }
     }
-  }catch(_err){
+  }catch(_error){
     // fallback to CSV below
   }
-  const csvRes = await fetch("../leaderboard/leaderboard.csv", {cache:"no-store"});
+
+  const csvRes = await fetch("../leaderboard/leaderboard.csv", { cache: "no-store" });
+  if(!csvRes.ok){
+    throw new Error(`Failed to fetch leaderboard CSV (${csvRes.status})`);
+  }
   const csvText = await csvRes.text();
   return normalizeRows(parseCSV(csvText));
 }
@@ -217,11 +403,12 @@ async function main(){
   const status = document.getElementById("status");
   try{
     state.rows = await loadRows();
-    appendSelectOptions("modelFilter", state.rows.map(r => r.model));
-    appendSelectOptions("sourceFilter", state.rows.map(r => r.source));
+    appendSelectOptions("modelFilter", state.rows, "model");
+    appendSelectOptions("sourceFilter", state.rows, "source");
 
     setupColumnToggles();
     setupSorting();
+    renderSummary(state.rows);
 
     document.getElementById("search").addEventListener("input", applyFilters);
     document.getElementById("modelFilter").addEventListener("change", applyFilters);
@@ -231,9 +418,9 @@ async function main(){
     state.sortKey = "score";
     state.sortDir = "desc";
     applyFilters();
-  }catch(e){
+  }catch(error){
     status.textContent = "Failed to load leaderboard.";
-    console.error(e);
+    console.error(error);
   }
 }
 

@@ -3,22 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Leaderboard</title>
+  <title>Live Leaderboard</title>
   <link rel="stylesheet" href="leaderboard.css" />
 </head>
 <body>
-  <header class="wrap">
-    <div class="title-row">
-      <h1>Leaderboard</h1>
-      <p class="sub">Search, filter, and compare submissions. Scores are computed on the hidden test set by the official evaluator.</p>
+  <header class="wrap hero reveal">
+    <p class="eyebrow">HeteroShot GNN Challenge</p>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1>Live Leaderboard</h1>
+        <p class="sub">Search, filter, and compare submissions. Scores are computed on the hidden test set by the official evaluator.</p>
+        <div class="hero-meta">
+          <span class="chip" id="updatedAt">Updated: --</span>
+          <a class="chip chip-link" href="https://github.com/Bechirdardouri/gnn-challenge" target="_blank" rel="noopener noreferrer">Repository</a>
+        </div>
+      </div>
+
+      <aside class="hero-stats" aria-label="Leaderboard summary">
+        <div class="stat">
+          <span class="stat-label">Submissions</span>
+          <span class="stat-value" id="statSubmissions">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Top Score</span>
+          <span class="stat-value" id="statTopScore">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Leader</span>
+          <span class="stat-value" id="statLeader">--</span>
+        </div>
+      </aside>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="controls card">
+    <section class="controls card reveal">
       <div class="control">
         <label for="search">Search</label>
-        <input id="search" type="search" placeholder="Search team, model, notes…" />
+        <input id="search" type="search" placeholder="Search team, model, notes..." />
       </div>
 
       <div class="control">
@@ -50,7 +72,25 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="podium card reveal" id="podium" aria-label="Top submissions">
+      <article class="podium-item second">
+        <p class="podium-rank">#2</p>
+        <p class="podium-team" id="podium2Team">--</p>
+        <p class="podium-score" id="podium2Score">--</p>
+      </article>
+      <article class="podium-item first">
+        <p class="podium-rank">#1</p>
+        <p class="podium-team" id="podium1Team">--</p>
+        <p class="podium-score" id="podium1Score">--</p>
+      </article>
+      <article class="podium-item third">
+        <p class="podium-rank">#3</p>
+        <p class="podium-team" id="podium3Team">--</p>
+        <p class="podium-score" id="podium3Score">--</p>
+      </article>
+    </section>
+
+    <section class="card reveal">
       <div class="table-wrap">
         <table id="tbl">
           <thead>
@@ -68,7 +108,7 @@
         </table>
       </div>
       <div class="foot">
-        <span id="status">Loading leaderboard…</span>
+        <span id="status">Loading leaderboard...</span>
       </div>
     </section>
   </main>
