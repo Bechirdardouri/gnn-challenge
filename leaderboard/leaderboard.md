@@ -1,5 +1,6 @@
 # Leaderboard
 This leaderboard is **auto-updated** from secure evaluation pipelines.
+Live leaderboard: [Open in browser](https://bechirdardouri.github.io/gnn-challenge/leaderboard.html)
 
 | Rank | Team | Model | Score | Source | Date (UTC) | Notes |
 |---:|---|---|---:|---|---|---|

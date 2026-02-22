@@ -4,8 +4,8 @@ A privacy-first node-classification competition template with automated secure s
 
 ## Live Links
 
-- Live leaderboard: `https://bechirdardouri.github.io/gnn-challenge/leaderboard.html`
-- Repository: `https://github.com/Bechirdardouri/gnn-challenge`
+- Live leaderboard: [Open Live Leaderboard](https://bechirdardouri.github.io/gnn-challenge/leaderboard.html)
+- Repository: [Bechirdardouri/gnn-challenge](https://github.com/Bechirdardouri/gnn-challenge)
 
 ## Competition At A Glance
 
