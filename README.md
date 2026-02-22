@@ -16,6 +16,62 @@ A privacy-first node-classification competition template with automated secure s
 - Privacy model: predictions are submitted encrypted (`.enc`) and scored in trusted GitHub Actions
 - Output: leaderboard updates are committed automatically and published via GitHub Pages
 
+## Challenge Context
+
+This competition is intentionally designed as a low-label graph problem:
+
+- `train.csv`: 100 labeled nodes
+- `val.csv`: 300 labeled nodes
+- `test.csv`: 7200 unlabeled nodes for submission
+- `edges.csv`: 53,411 graph edges over 7,600 total nodes
+
+What makes it interesting:
+
+- You have very little supervised signal relative to test size
+- Performance depends on combining feature learning and graph structure
+- Evaluation is private and automated, so leaderboard gains must come from genuine generalization
+
+## Dataset Quirks And Hidden Traps
+
+These are the main pitfalls teams should account for:
+
+- Label scarcity is real:
+  - only 400 labeled nodes total (`train + val`) vs 7,200 test nodes
+- Class prior mismatch risk:
+  - `val` is perfectly balanced across 5 classes, while `train` is slightly skewed
+- Graph degree is heavy-tailed:
+  - median total degree is 8, 95th percentile is 46, max degree is 2606
+  - hub nodes can dominate naive neighbor aggregation
+- Graph signal is not purely homophilous:
+  - on known-known labeled edges, same-class rate is around 0.24 (close to 0.20 random baseline for 5 classes)
+  - aggressive same-label propagation can hurt
+- Direct label reach into test is limited:
+  - only about 25% of test nodes have a direct edge to a labeled node
+  - relying on 1-hop supervision alone leaves most test nodes weakly informed
+
+## Training And Data Recommendations
+
+Recommended strategy for strong, stable submissions:
+
+1. Treat this as hybrid tabular + graph learning
+   - start from feature-strong models
+   - add graph-derived features (1-hop/2-hop aggregates, degree/log-degree)
+2. Use `val` for serious model selection
+   - tune seeds, depth/regularization, and feature mixing on Macro-F1
+   - avoid single-seed conclusions; use seed ensembles for stability
+3. Control hub effects
+   - use degree-normalized aggregation
+   - include explicit degree features so model can adapt to hub vs non-hub nodes
+4. Handle class imbalance cautiously
+   - class-balanced losses/weights can help on small-train settings
+   - validate calibration behavior on `val`, not only raw train fit
+5. Reduce variance before final test inference
+   - after selecting hyperparameters, retrain on `train + val`
+   - ensemble multiple seeds/models where feasible
+6. Keep submissions strict and reproducible
+   - validate `node_id` coverage against `data/test.csv`
+   - keep a deterministic pipeline from training to CSV to encryption
+
 ## Why This Template Is Strong
 
 - Fair evaluation: hidden labels are not exposed to participants
