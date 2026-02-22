@@ -1,0 +1,38 @@
+name: Publish Leaderboard
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "leaderboard/leaderboard.csv"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+
+      - name: Render leaderboard markdown
+        run: |
+          python competition/render_leaderboard.py
+
+      - name: Commit rendered leaderboard
+        run: |
+          if git diff --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add leaderboard/leaderboard.md docs/leaderboard.json
+          git commit -m "Update leaderboard.md"
+          git push

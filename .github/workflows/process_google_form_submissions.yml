@@ -1,0 +1,77 @@
+name: Process Google Form Submissions
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [google_form_submission]
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Materialize private labels
+        env:
+          PRIVATE_TEST_LABELS_CSV: ${{ secrets.PRIVATE_TEST_LABELS_CSV }}
+          PRIVATE_DATA_METHOD: ${{ secrets.PRIVATE_DATA_METHOD }}
+          GOOGLE_DRIVE_FILE_ID: ${{ secrets.GOOGLE_DRIVE_FILE_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          PRIVATE_DATA_URL: ${{ secrets.PRIVATE_DATA_URL }}
+          PRIVATE_DATA_S3_URI: ${{ secrets.PRIVATE_DATA_S3_URI }}
+        run: |
+          mkdir -p data/private
+          if [ -n "${PRIVATE_TEST_LABELS_CSV}" ]; then
+            printf '%s' "${PRIVATE_TEST_LABELS_CSV}" > data/private/test_labels.csv
+          else
+            python scripts/download_private_data.py \
+              --method "${PRIVATE_DATA_METHOD:-google_drive}" \
+              --output data/private/test_labels.csv \
+              --google-drive-file-id "${GOOGLE_DRIVE_FILE_ID}" \
+              --google-credentials-json "${GOOGLE_CREDENTIALS_JSON}" \
+              --url "${PRIVATE_DATA_URL}" \
+              --s3-uri "${PRIVATE_DATA_S3_URI}" \
+              --force
+          fi
+
+      - name: Process form submissions
+        env:
+          GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          if [ -z "${GOOGLE_SHEETS_ID}" ] || [ -z "${GOOGLE_CREDENTIALS_JSON}" ]; then
+            echo "Missing required secrets: GOOGLE_SHEETS_ID and/or GOOGLE_CREDENTIALS_JSON"
+            exit 1
+          fi
+          python scripts/process_google_form_submissions.py \
+            --google-sheets-id "${GOOGLE_SHEETS_ID}" \
+            --google-credentials-json "${GOOGLE_CREDENTIALS_JSON}" \
+            --leaderboard-path "leaderboard/leaderboard.csv" \
+            --private-labels-path "data/private/test_labels.csv" \
+            --strict
+
+      - name: Render leaderboard assets
+        run: python competition/render_leaderboard.py
+
+      - name: Commit leaderboard updates
+        run: |
+          if git diff --quiet; then
+            echo "No leaderboard updates."
+            exit 0
+          fi
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add leaderboard/leaderboard.csv leaderboard/leaderboard.md docs/leaderboard.json
+          git commit -m "Process Google Form submissions"
+          git push

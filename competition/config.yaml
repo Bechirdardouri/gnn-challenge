@@ -1,0 +1,2 @@
+task: binary_node_classification
+metric: roc_auc

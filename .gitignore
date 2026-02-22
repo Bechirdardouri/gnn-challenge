@@ -1,0 +1,11 @@
+# Secrets and private artifacts
+.secrets/
+encryption/private_key.pem
+data/private/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS artifacts
+.DS_Store

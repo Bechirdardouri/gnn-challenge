@@ -1,0 +1,119 @@
+name: Score Encrypted PR Submission
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "submissions/*.enc"
+      - "submissions/**/*.enc"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted base branch code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write private key from GitHub Secret
+        env:
+          PRIVATE_KEY_PEM: ${{ secrets.PRIVATE_KEY_PEM }}
+        run: |
+          if [ -z "${PRIVATE_KEY_PEM}" ]; then
+            echo "Missing required secret: PRIVATE_KEY_PEM"
+            exit 1
+          fi
+          mkdir -p .secrets
+          printf '%s' "${PRIVATE_KEY_PEM}" > .secrets/private_key.pem
+          chmod 600 .secrets/private_key.pem
+
+      - name: Materialize private labels
+        env:
+          PRIVATE_TEST_LABELS_CSV: ${{ secrets.PRIVATE_TEST_LABELS_CSV }}
+          PRIVATE_DATA_METHOD: ${{ secrets.PRIVATE_DATA_METHOD }}
+          GOOGLE_DRIVE_FILE_ID: ${{ secrets.GOOGLE_DRIVE_FILE_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          PRIVATE_DATA_URL: ${{ secrets.PRIVATE_DATA_URL }}
+          PRIVATE_DATA_S3_URI: ${{ secrets.PRIVATE_DATA_S3_URI }}
+        run: |
+          mkdir -p data/private
+          if [ -n "${PRIVATE_TEST_LABELS_CSV}" ]; then
+            printf '%s' "${PRIVATE_TEST_LABELS_CSV}" > data/private/test_labels.csv
+          else
+            python scripts/download_private_data.py \
+              --method "${PRIVATE_DATA_METHOD:-google_drive}" \
+              --output data/private/test_labels.csv \
+              --google-drive-file-id "${GOOGLE_DRIVE_FILE_ID}" \
+              --google-credentials-json "${GOOGLE_CREDENTIALS_JSON}" \
+              --url "${PRIVATE_DATA_URL}" \
+              --s3-uri "${PRIVATE_DATA_S3_URI}" \
+              --force
+          fi
+
+      - name: Evaluate encrypted submissions in PR
+        id: process
+        continue-on-error: true
+        env:
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          python scripts/process_pr_encrypted_submissions.py \
+            --repo "${{ github.repository }}" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --github-token "${{ secrets.GITHUB_TOKEN }}" \
+            --private-key-path ".secrets/private_key.pem" \
+            --private-key-password "${PRIVATE_KEY_PASSWORD}" \
+            --private-labels-path "data/private/test_labels.csv" \
+            --leaderboard-path "leaderboard/leaderboard.csv" \
+            --comment-path "artifacts/pr_comment.md" \
+            --strict
+
+      - name: Render leaderboard assets
+        if: always()
+        run: python competition/render_leaderboard.py
+
+      - name: Commit leaderboard updates
+        if: always()
+        run: |
+          if git diff --quiet; then
+            echo "No leaderboard change."
+            exit 0
+          fi
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add leaderboard/leaderboard.csv leaderboard/leaderboard.md docs/leaderboard.json
+          git commit -m "Leaderboard update from PR #${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Post PR evaluation comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = "artifacts/pr_comment.md";
+            const body = fs.existsSync(path)
+              ? fs.readFileSync(path, "utf8")
+              : "Secure evaluation completed, but no comment artifact was generated.";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
+
+      - name: Fail workflow if evaluation failed
+        if: steps.process.outcome == 'failure'
+        run: exit 1
