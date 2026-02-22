@@ -1,111 +1,163 @@
 # HeteroShot GNN Challenge
 
-Privacy-preserving node-classification challenge with automated scoring and a public leaderboard.
+A privacy-first node-classification competition template with automated secure scoring and a live public leaderboard.
 
-## Live Leaderboard
+## Live Links
 
-**https://bechirdardouri.github.io/gnn-challenge/leaderboard.html**
+- Live leaderboard: `https://bechirdardouri.github.io/gnn-challenge/leaderboard.html`
+- Repository: `https://github.com/Bechirdardouri/gnn-challenge`
+
+## Competition At A Glance
+
+- Task: node classification on graph-structured data
+- Public data: `data/train.csv`, `data/val.csv`, `data/test.csv`, `data/edges.csv`
+- Hidden data: private test labels (never committed in plaintext)
+- Main metric: Macro-F1 for class-label submissions
+- Privacy model: predictions are submitted encrypted (`.enc`) and scored in trusted GitHub Actions
+- Output: leaderboard updates are committed automatically and published via GitHub Pages
+
+## Why This Template Is Strong
+
+- Fair evaluation: hidden labels are not exposed to participants
+- Transparent operations: scoring logic is versioned in repo code
+- Reproducible workflow: validation, encryption, scoring, and rendering are scripted
+- Fast feedback: leaderboard updates automatically after successful evaluation runs
 
 ## Start Here
 
-If you are a participant:
-- Read `docs/PARTICIPANT_GUIDE.md`
-- Run `python starter_code/sota_graph_ensemble.py`
-- Validate + encrypt + submit `.enc` via PR
+### For Participants
 
-If you are an organizer:
-- Read `docs/ORGANIZER_GUIDE.md`
-- Configure GitHub secrets and workflows
-- Keep private labels/private key out of git
+1. Read `docs/PARTICIPANT_GUIDE.md`
+2. Train and generate predictions
+3. Validate CSV format and coverage
+4. Encrypt submission with organizer public key
+5. Open PR containing only `submissions/*.enc`
 
-If you want the structure overview:
-- Read `docs/REPO_MAP.md`
-
-If you want quick answers:
-- Read `docs/FAQ.md`
-
-## Fast Participant Workflow
+Quick path:
 
 ```bash
-# 1) Generate predictions
-python starter_code/sota_graph_ensemble.py
+# 1) Generate starter SOTA predictions
+python starter_code/sota_graph_ensemble.py --output submissions/sota_ensemble_submission.csv
 
-# 2) Validate coverage/format
+# 2) Validate your file
 python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
 
-# 3) Encrypt for private submission
+# 3) Encrypt (replace team/model names)
 python encryption/encrypt.py \
   submissions/sota_ensemble_submission.csv \
   encryption/public_key.pem \
-  submissions/<team_name>__<model>.enc
+  submissions/<team_name>__<model_name>.enc
 ```
 
-Then open a PR with only `submissions/*.enc`.
+### For Organizers
 
-Note:
-- `encryption/public_key.pem` must be the real organizer key (not placeholder text).
+1. Read `docs/ORGANIZER_GUIDE.md`
+2. Configure secrets for private labels and private key
+3. Verify Actions workflows are enabled with write permissions
+4. Run a smoke test submission to confirm end-to-end scoring
 
-## What This Repo Includes
+## Submission Channels
 
-- Secure encrypted PR scoring: `.github/workflows/score_submission.yml`
-- Optional Google Form pipeline: `.github/workflows/process_google_form_submissions.yml`
-- Leaderboard rendering/publishing: `.github/workflows/publish_leaderboard.yml`
-- Merge-time fallback sync (encrypted submissions): `.github/workflows/sync_leaderboard_from_encrypted_submissions.yml`
-  - also supports legacy plaintext CSV backfill on `main` for existing public submissions
-- Shared validation/scoring utilities: `competition/`
-- Encryption tools: `encryption/`
-- Starter baselines: `starter_code/`
+### Channel A: Encrypted Pull Requests (recommended)
 
-## SOTA Starter Baseline
+1. Participant generates `node_id,target` CSV offline
+2. Participant encrypts with `encryption/public_key.pem`
+3. Participant submits `.enc` in PR
+4. `Score Encrypted PR Submission` workflow decrypts and scores in trusted runner
+5. Leaderboard artifacts update automatically
 
-`starter_code/sota_graph_ensemble.py` uses:
-- raw node features
-- 1-hop and 2-hop graph-aggregated features
-- degree statistics
-- multi-seed ExtraTrees ensembling
+Workflow: `.github/workflows/score_submission.yml`
 
-Recommended defaults:
-- `--seeds 7,13,77`
-- `--n-estimators 1400`
-- `--max-features sqrt`
+### Channel B: Google Form + Drive (optional)
+
+1. Team uploads CSV through Google Form
+2. Google Sheet + Apps Script trigger dispatches workflow
+3. Workflow downloads submissions from Drive and scores them
+4. Leaderboard updates automatically
+
+Workflow: `.github/workflows/process_google_form_submissions.yml`
+
+## How Leaderboard Updates Work
+
+1. Submissions are scored against private labels
+2. `leaderboard/leaderboard.csv` is updated
+3. `competition/render_leaderboard.py` regenerates `leaderboard/leaderboard.md` and `docs/leaderboard.json`
+4. GitHub Pages serves the live UI from `docs/`
+
+Primary publish workflows:
+- `.github/workflows/sync_leaderboard_from_encrypted_submissions.yml`
+- `.github/workflows/publish_leaderboard.yml`
+
+## Security And Privacy Model
+
+- Public repository stores encrypted submissions, not plaintext predictions
+- Private key is injected at runtime from secret `PRIVATE_KEY_PEM`
+- Private labels are materialized at runtime by `scripts/materialize_private_labels.py`
+- Trusted base-branch workflow code performs scoring
+- PR scorer reads submission files via GitHub API and avoids running untrusted PR code
+
+Private label sources supported:
+- `PRIVATE_TEST_LABELS_CSV` (preferred)
+- `PRIVATE_TEST_LABELS_CSV_GZIP_B64` (for large secrets)
+- `TEST_LABELS_KEY` + `data/test_labels.csv.enc` (legacy mode)
+- External source via `PRIVATE_DATA_METHOD` (`google_drive`, `url`, `s3`)
+
+Deep dive: `docs/SECURITY.md`
+
+## Repository Structure
+
+- `competition/`: validation, metrics, evaluation, rendering
+- `encryption/`: key utilities and encryption/decryption scripts
+- `starter_code/`: baseline and stronger starter models
+- `scripts/`: CI helpers for private data and scoring pipelines
+- `submissions/`: participant submissions and examples
+- `leaderboard/`: canonical leaderboard data files
+- `docs/`: live UI assets and operational documentation
 
 ## Useful Commands
 
 ```bash
-# Show common project commands
-make help
-
-# Check environment
+# Environment and dependency checks
 python check_setup.py
 
-# Render leaderboard artifacts after leaderboard.csv changes
-python competition/render_leaderboard.py
+# Show shortcut commands
+make help
 
-# Evaluate locally (when private labels are available)
+# Build starter submission
+make train-sota
+
+# Validate a submission
+make validate-sota
+
+# Render leaderboard markdown/json from leaderboard.csv
+make render-leaderboard
+
+# Local evaluation (requires local private labels)
 python competition/evaluate.py submissions/sota_ensemble_submission.csv data/private/test_labels.csv --metric auto
-
-# Materialize private labels from configured secrets/sources
-python scripts/materialize_private_labels.py --output data/private/test_labels.csv
 ```
 
-## If Leaderboard Shows "No Results"
+## Leaderboard Troubleshooting
 
-1. Open GitHub Actions and run:
-   - `Sync Leaderboard From Encrypted Submissions` (manual `workflow_dispatch` run)
-2. Confirm one private-label source is configured:
-   - `PRIVATE_TEST_LABELS_CSV` (preferred), or
-   - `PRIVATE_TEST_LABELS_CSV_GZIP_B64` (for large CSV secrets), or
-   - `TEST_LABELS_KEY` with `data/test_labels.csv.enc`, or
-   - `PRIVATE_DATA_METHOD` + matching source secrets
-3. Confirm secure PR submissions are encrypted `.enc` files (plaintext CSVs in PR are not scored).
+If the leaderboard UI shows no rows:
 
-## Security Model (Short Version)
+1. Open Actions and inspect latest run of `Sync Leaderboard From Encrypted Submissions`
+2. Confirm at least one private-label source secret is configured
+3. Re-run sync workflow manually (`workflow_dispatch`)
+4. Confirm run steps `Materialize private labels` and `Process repository submissions` are green
+5. Hard refresh leaderboard page after Pages deploy completes
 
-- Public repo stores encrypted submissions (`.enc`) only.
-- Decryption happens only in GitHub Actions using `PRIVATE_KEY_PEM`.
-- Private labels are provided at runtime via secrets.
-- Legacy private-label decrypt is supported via `TEST_LABELS_KEY` + `data/test_labels.csv.enc`.
-- Trusted base-branch code performs evaluation.
-- Fallback merge-time sync ensures merged encrypted submissions are reflected on leaderboard.
+## Professional Standards
 
-See `docs/SECURITY.md` for the full model.
+- Do not commit private keys or plaintext private labels
+- Keep submission PRs limited to encrypted files
+- Keep workflow and scoring changes documented in PR descriptions
+- Preserve reproducibility: prefer explicit scripts over ad-hoc manual edits
+
+## Additional Docs
+
+- Participant instructions: `docs/PARTICIPANT_GUIDE.md`
+- Organizer setup: `docs/ORGANIZER_GUIDE.md`
+- Security model: `docs/SECURITY.md`
+- Repo map: `docs/REPO_MAP.md`
+- FAQ: `docs/FAQ.md`
+- Contribution guide: `CONTRIBUTING.md`
