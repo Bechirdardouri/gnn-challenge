@@ -33,13 +33,14 @@ jobs:
         env:
           PRIVATE_KEY_PEM: ${{ secrets.PRIVATE_KEY_PEM }}
         run: |
-          if [ -z "${PRIVATE_KEY_PEM}" ]; then
-            echo "Missing required secret: PRIVATE_KEY_PEM"
-            exit 1
+          if [ -n "${PRIVATE_KEY_PEM}" ]; then
+            mkdir -p .secrets
+            printf '%s' "${PRIVATE_KEY_PEM}" > .secrets/private_key.pem
+            chmod 600 .secrets/private_key.pem
+            echo "Private key configured: encrypted submissions will be scored."
+          else
+            echo "PRIVATE_KEY_PEM not set: running in plaintext-CSV backfill mode only."
           fi
-          mkdir -p .secrets
-          printf '%s' "${PRIVATE_KEY_PEM}" > .secrets/private_key.pem
-          chmod 600 .secrets/private_key.pem
 
       - name: Materialize private labels
         env:
@@ -74,6 +75,10 @@ jobs:
         env:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: |
+          if [ ! -f data/private/test_labels.csv ]; then
+            echo "Missing private labels. Set PRIVATE_TEST_LABELS_CSV, TEST_LABELS_KEY, or external private-data secrets."
+            exit 1
+          fi
           python scripts/process_repository_encrypted_submissions.py \
             --submissions-dir "submissions" \
             --include-plaintext-csv \

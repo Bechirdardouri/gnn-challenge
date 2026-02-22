@@ -38,7 +38,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Also score plaintext CSV files in submissions/ (legacy/backfill mode).",
     )
-    parser.add_argument("--private-key-path", required=True, help="Path to private key PEM.")
+    parser.add_argument(
+        "--private-key-path",
+        default="",
+        help="Path to private key PEM. Optional when only processing plaintext CSV submissions.",
+    )
     parser.add_argument(
         "--private-key-password",
         default=None,
@@ -84,6 +88,13 @@ def parse_team_and_model(path: Path) -> tuple[str, str]:
     return team.strip() or "unknown_team", model.strip()
 
 
+def safe_repo_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(ROOT.resolve()))
+    except Exception:
+        return str(path)
+
+
 def is_plaintext_submission_csv(path: Path) -> bool:
     if path.suffix.lower() != ".csv":
         return False
@@ -100,7 +111,13 @@ def main() -> int:
     if not submissions_dir.exists():
         raise FileNotFoundError(f"Submissions directory not found: {submissions_dir}")
 
-    private_key = load_private_key(args.private_key_path, args.private_key_password)
+    private_key = None
+    if args.private_key_path:
+        private_key_path = Path(args.private_key_path)
+        if private_key_path.exists():
+            private_key = load_private_key(private_key_path, args.private_key_password)
+        else:
+            print(f"Private key path not found, skipping .enc scoring: {private_key_path}")
     labels = read_label_csv(args.private_labels_path)
     test_nodes = pd.read_csv(args.test_nodes_path)
     leaderboard_rows = read_leaderboard(args.leaderboard_path)
@@ -120,6 +137,10 @@ def main() -> int:
     changed = False
 
     for path in enc_files:
+        if private_key is None:
+            skipped += 1
+            print(f"Skipped {path}: no private key configured.")
+            continue
         try:
             enc_bytes = path.read_bytes()
             submission_id = f"enc_sha256:{sha256_bytes(enc_bytes)}"
@@ -144,7 +165,7 @@ def main() -> int:
                     "source": "encrypted_repo_scan",
                     "submission_id": submission_id,
                     "pr_number": "",
-                    "notes": str(path.relative_to(ROOT)),
+                    "notes": safe_repo_relative(path),
                 }
             )
             seen_submission_ids.add(submission_id)
@@ -178,7 +199,7 @@ def main() -> int:
                     "source": "plaintext_repo_scan",
                     "submission_id": submission_id,
                     "pr_number": "",
-                    "notes": str(path.relative_to(ROOT)),
+                    "notes": safe_repo_relative(path),
                 }
             )
             seen_submission_ids.add(submission_id)
