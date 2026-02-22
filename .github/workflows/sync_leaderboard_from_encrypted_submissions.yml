@@ -1,5 +1,7 @@
 name: Sync Leaderboard From Encrypted Submissions
 
+# This workflow path is included in `on.push.paths` so operators can retrigger sync
+# by committing workflow/config fixes without modifying submission files.
 on:
   push:
     branches: [ main ]
