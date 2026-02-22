@@ -1,43 +1,40 @@
-# Competition Module
+# Competition Core
 
-Core validation, scoring, and leaderboard rendering utilities.
+Everything here is part of the trusted scoring/validation pipeline.
 
-## Files
+## Main scripts
 
-- `validate_submission.py`: validates submission schema and ID coverage.
-- `evaluate.py`: evaluates a submission against private labels.
-- `render_leaderboard.py`: regenerates markdown/json leaderboard artifacts.
-- `submission_utils.py`: shared normalization + validation + scoring helpers.
-- `metrics.py`: Macro-F1 and ROC-AUC metrics.
+- `validate_submission.py`
+  - checks schema, duplicates, missing IDs, and coverage against test-node list
+- `evaluate.py`
+  - scores one submission against label file
+  - `--metric auto`:
+    - uses Macro-F1 for class-label predictions
+    - can use ROC-AUC for probability-style binary predictions
+- `render_leaderboard.py`
+  - regenerates:
+    - `leaderboard/leaderboard.md`
+    - `docs/leaderboard.json`
 
-## Submission CSV formats
+## Shared helpers
 
-Accepted ID columns:
-- `node_id` (preferred)
-- `id`
-- `filename`
+- `submission_utils.py`
+  - accepts multiple column aliases (`node_id|id|filename`, `target|prediction|y_pred`)
+- `metrics.py`
+  - `macro_f1`
+  - `binary_auc`
+- `leaderboard_utils.py`
+  - read/write leaderboard CSV rows
 
-Accepted prediction columns:
-- `target` (preferred for this challenge)
-- `prediction`
-- `y_pred`
-
-## Usage
-
-Validate:
+## Typical local commands
 
 ```bash
+# validate
 python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
-```
 
-Evaluate:
-
-```bash
+# evaluate (requires private labels)
 python competition/evaluate.py submissions/sota_ensemble_submission.csv data/private/test_labels.csv --metric auto
-```
 
-Render leaderboard:
-
-```bash
+# regenerate leaderboard artifacts
 python competition/render_leaderboard.py
 ```

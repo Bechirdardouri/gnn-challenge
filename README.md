@@ -1,105 +1,95 @@
-# HeteroShot GNN Challenge (Secure + SOTA-Ready)
+# HeteroShot GNN Challenge
 
-Privacy-preserving competition template with automated scoring and real-time leaderboard updates.
+Privacy-preserving node-classification challenge with automated scoring and a public leaderboard.
 
-## Live leaderboard
+## Live Leaderboard
 
 **https://bechirdardouri.github.io/gnn-challenge/leaderboard.html**
 
-## What is included
+## Start Here
 
-- Secure encrypted submission pipeline (`submissions/*.enc` + GitHub Actions decryption with secrets)
-- Google Form / Sheets / Drive ingestion pipeline
-- Unified validation/scoring utilities (multiclass Macro-F1, plus auto metric detection)
-- SOTA-ready starter submission model: `starter_code/sota_graph_ensemble.py`
+If you are a participant:
+- Read `docs/PARTICIPANT_GUIDE.md`
+- Run `python starter_code/sota_graph_ensemble.py`
+- Validate + encrypt + submit `.enc` via PR
 
-## Quickstart (best baseline)
+If you are an organizer:
+- Read `docs/ORGANIZER_GUIDE.md`
+- Configure GitHub secrets and workflows
+- Keep private labels/private key out of git
 
-1. Train and generate predictions:
+If you want the structure overview:
+- Read `docs/REPO_MAP.md`
+
+If you want quick answers:
+- Read `docs/FAQ.md`
+
+## Fast Participant Workflow
 
 ```bash
+# 1) Generate predictions
 python starter_code/sota_graph_ensemble.py
-```
 
-2. Validate:
-
-```bash
+# 2) Validate coverage/format
 python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
+
+# 3) Encrypt for private submission
+python encryption/encrypt.py \
+  submissions/sota_ensemble_submission.csv \
+  encryption/public_key.pem \
+  submissions/<team_name>__<model>.enc
 ```
 
-3. Encrypt:
+Then open a PR with only `submissions/*.enc`.
 
-```bash
-python encryption/encrypt.py submissions/sota_ensemble_submission.csv encryption/public_key.pem submissions/<team_name>__<model>.enc
-```
+Note:
+- `encryption/public_key.pem` must be the real organizer key (not placeholder text).
 
-Note: `encryption/public_key.pem` must contain the real organizer public key (not the placeholder template key).
+## What This Repo Includes
 
-4. Open PR with only `.enc` submission files.
+- Secure encrypted PR scoring: `.github/workflows/score_submission.yml`
+- Optional Google Form pipeline: `.github/workflows/process_google_form_submissions.yml`
+- Leaderboard rendering/publishing: `.github/workflows/publish_leaderboard.yml`
+- Merge-time fallback sync (encrypted submissions): `.github/workflows/sync_leaderboard_from_encrypted_submissions.yml`
+- Shared validation/scoring utilities: `competition/`
+- Encryption tools: `encryption/`
+- Starter baselines: `starter_code/`
 
-## SOTA starter details
+## SOTA Starter Baseline
 
-`starter_code/sota_graph_ensemble.py` builds graph-aware features:
+`starter_code/sota_graph_ensemble.py` uses:
 - raw node features
-- 1-hop aggregated features
-- 2-hop aggregated features
+- 1-hop and 2-hop graph-aggregated features
 - degree statistics
-
-Then it trains a multi-seed ExtraTrees ensemble for robust Macro-F1.
+- multi-seed ExtraTrees ensembling
 
 Recommended defaults:
-- seeds: `7,13,77`
-- estimators per model: `1400`
+- `--seeds 7,13,77`
+- `--n-estimators 1400`
+- `--max-features sqrt`
 
-## Security model
-
-- Public repo stores only encrypted submissions.
-- Private labels stay outside git and are materialized in CI from secrets.
-- Private key is stored in GitHub Actions secrets only.
-- Scoring executes trusted base-branch code.
-
-See `docs/SECURITY.md`.
-
-## Repository layout
-
-```text
-.
-├── .github/workflows/
-│   ├── score_submission.yml
-│   ├── process_google_form_submissions.yml
-│   └── publish_leaderboard.yml
-├── competition/
-├── docs/
-├── encryption/
-├── starter_code/
-├── submissions/
-└── scripts/
-```
-
-## Required GitHub secrets
-
-Encrypted PR method:
-- `PRIVATE_KEY_PEM` (required)
-- `PRIVATE_KEY_PASSWORD` (optional)
-
-Private labels source (choose one):
-- `PRIVATE_TEST_LABELS_CSV`, or
-- `PRIVATE_DATA_METHOD` + source-specific secrets (`GOOGLE_DRIVE_FILE_ID`, `GOOGLE_CREDENTIALS_JSON`, `PRIVATE_DATA_URL`, `PRIVATE_DATA_S3_URI`)
-
-Google Form method:
-- `GOOGLE_SHEETS_ID`
-- `GOOGLE_CREDENTIALS_JSON`
-
-## Utilities
-
-Environment check:
+## Useful Commands
 
 ```bash
+# Show common project commands
+make help
+
+# Check environment
 python check_setup.py
-```
 
-Leaderboard rendering:
-
-```bash
+# Render leaderboard artifacts after leaderboard.csv changes
 python competition/render_leaderboard.py
+
+# Evaluate locally (when private labels are available)
+python competition/evaluate.py submissions/sota_ensemble_submission.csv data/private/test_labels.csv --metric auto
 ```
+
+## Security Model (Short Version)
+
+- Public repo stores encrypted submissions (`.enc`) only.
+- Decryption happens only in GitHub Actions using `PRIVATE_KEY_PEM`.
+- Private labels are provided at runtime via secrets.
+- Trusted base-branch code performs evaluation.
+- Fallback merge-time sync ensures merged encrypted submissions are reflected on leaderboard.
+
+See `docs/SECURITY.md` for the full model.

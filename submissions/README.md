@@ -1,36 +1,34 @@
-# Submission Guide
+# Submissions Folder
 
-## 1. Generate predictions
+This folder contains:
 
-Recommended:
+- generated plaintext prediction CSVs (local artifacts)
+- encrypted submission files (`.enc`) for PRs
+- sample/reference submissions
+
+## Official Challenge Submission Flow
+
+1. Generate predictions:
 
 ```bash
 python starter_code/sota_graph_ensemble.py
 ```
 
-This creates `submissions/sota_ensemble_submission.csv`.
-
-## 2. Validate locally
+2. Validate:
 
 ```bash
 python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
 ```
 
-## 3. Encrypt the CSV
+3. Encrypt:
 
 ```bash
-python encryption/encrypt.py submissions/sota_ensemble_submission.csv encryption/public_key.pem submissions/<team_name>__<model>.enc
+python encryption/encrypt.py \
+  submissions/sota_ensemble_submission.csv \
+  encryption/public_key.pem \
+  submissions/<team_name>__<model>.enc
 ```
 
-## 4. Submit via PR
+4. Open PR with only `submissions/*.enc`.
 
-Open a pull request that includes only `submissions/*.enc`.
-
-### Accepted plaintext CSV schemas
-
-Preferred:
-- `node_id,target`
-
-Also accepted:
-- `id,prediction`
-- `filename,y_pred`
+For full instructions, see `docs/PARTICIPANT_GUIDE.md`.

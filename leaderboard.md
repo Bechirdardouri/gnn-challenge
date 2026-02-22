@@ -1,9 +1,10 @@
-# Leaderboard
+# Leaderboard Access
 
-Live leaderboard:
+Use the interactive live leaderboard:
 
 **https://bechirdardouri.github.io/gnn-challenge/leaderboard.html**
 
-Canonical artifacts:
-- `leaderboard/leaderboard.csv`
-- `leaderboard/leaderboard.md`
+Generated artifacts in this repo:
+- `leaderboard/leaderboard.csv` (source of truth)
+- `leaderboard/leaderboard.md` (rendered table)
+- `docs/leaderboard.json` (UI data feed)

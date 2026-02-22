@@ -66,6 +66,8 @@ jobs:
         run: python competition/render_leaderboard.py
 
       - name: Commit leaderboard updates
+        env:
+          BASE_REF: main
         run: |
           if git diff --quiet; then
             echo "No leaderboard updates."
@@ -75,4 +77,4 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git add leaderboard/leaderboard.csv leaderboard/leaderboard.md docs/leaderboard.json
           git commit -m "Process Google Form submissions"
-          git push
+          git push origin "HEAD:${BASE_REF}"

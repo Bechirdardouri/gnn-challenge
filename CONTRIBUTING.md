@@ -1,48 +1,52 @@
-# Contributing And Submitting
+# Contributing
 
-This challenge uses **encrypted submissions** for privacy-preserving scoring.
+Thanks for helping improve the challenge.
 
-## Submission format
+## Contribution Types
 
-Your plaintext CSV should contain:
+- Participant submission PRs (encrypted `.enc` files)
+- Infrastructure improvements (workflows, scripts, docs)
+- Bug fixes in validation/scoring/leaderboard tooling
 
-```csv
-node_id,target
-2090,0
-163,1
-1650,3
-```
+## For Submission PRs
 
-Accepted alternatives:
-- ID column: `node_id`, `id`, or `filename`
-- prediction column: `target`, `prediction`, or `y_pred`
+Use encrypted submissions only:
 
-## Recommended baseline (SOTA-ready starter)
+- Allowed: `submissions/*.enc`
+- Not allowed: plaintext prediction files in PR
 
-```bash
-python starter_code/sota_graph_ensemble.py
-```
+Template:
+- `.github/PULL_REQUEST_TEMPLATE.md`
 
-This writes `submissions/sota_ensemble_submission.csv`.
+Guide:
+- `docs/PARTICIPANT_GUIDE.md`
 
-## Encrypt before PR
+## For Code/Docs PRs
+
+Before opening a PR:
 
 ```bash
-python encryption/encrypt.py submissions/sota_ensemble_submission.csv encryption/public_key.pem submissions/<team_name>.enc
-```
-
-Only submit `.enc` files in PRs.
-
-## Pull request checklist
-
-- [ ] I only added encrypted submission files (`submissions/*.enc`)
-- [ ] I did not modify scoring scripts or workflows
-- [ ] My submission covers all test node IDs
-- [ ] No private labels or secrets are committed
-
-## Validation helpers
-
-```bash
-python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
 python check_setup.py
+python -m compileall competition scripts encryption starter_code
 ```
+
+If your change touches leaderboard formatting:
+
+```bash
+python competition/render_leaderboard.py
+```
+
+## Style Expectations
+
+- Keep explanations clear and concrete.
+- Prefer small, reviewable commits.
+- Update docs when behavior changes.
+- Avoid introducing parallel submission paths that conflict with secure workflows.
+
+## Security Rules
+
+- Never commit private keys.
+- Never commit plaintext private labels.
+- Do not weaken `pull_request_target` safety assumptions in workflows.
+
+See `docs/SECURITY.md` for details.

@@ -52,3 +52,9 @@ Google Form:
 - Restrict who can edit workflows and secrets.
 - Use branch protections on `main`.
 - Keep workflows pinned to trusted actions versions.
+
+## Related Docs
+
+- Project overview: `README.md`
+- Participant flow: `docs/PARTICIPANT_GUIDE.md`
+- Organizer setup: `docs/ORGANIZER_GUIDE.md`

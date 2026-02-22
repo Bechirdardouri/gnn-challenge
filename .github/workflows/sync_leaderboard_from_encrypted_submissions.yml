@@ -1,24 +1,22 @@
-name: Score Encrypted PR Submission
+name: Sync Leaderboard From Encrypted Submissions
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  push:
+    branches: [ main ]
     paths:
       - "submissions/*.enc"
       - "submissions/**/*.enc"
+  workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  score:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout trusted base branch code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -29,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Write private key from GitHub Secret
+      - name: Write private key from secret
         env:
           PRIVATE_KEY_PEM: ${{ secrets.PRIVATE_KEY_PEM }}
         run: |
@@ -64,60 +62,31 @@ jobs:
               --force
           fi
 
-      - name: Evaluate encrypted submissions in PR
-        id: process
-        continue-on-error: true
+      - name: Process encrypted submissions in repository
         env:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: |
-          python scripts/process_pr_encrypted_submissions.py \
-            --repo "${{ github.repository }}" \
-            --pr-number "${{ github.event.pull_request.number }}" \
-            --github-token "${{ secrets.GITHUB_TOKEN }}" \
+          python scripts/process_repository_encrypted_submissions.py \
+            --submissions-dir "submissions" \
             --private-key-path ".secrets/private_key.pem" \
             --private-key-password "${PRIVATE_KEY_PASSWORD}" \
             --private-labels-path "data/private/test_labels.csv" \
             --test-nodes-path "data/test.csv" \
-            --leaderboard-path "leaderboard/leaderboard.csv" \
-            --comment-path "artifacts/pr_comment.md" \
-            --strict
+            --leaderboard-path "leaderboard/leaderboard.csv"
 
       - name: Render leaderboard assets
-        if: always()
         run: python competition/render_leaderboard.py
 
-      - name: Commit leaderboard updates
-        if: always()
+      - name: Commit updates
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_REF: main
         run: |
           if git diff --quiet; then
-            echo "No leaderboard change."
+            echo "No leaderboard changes."
             exit 0
           fi
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add leaderboard/leaderboard.csv leaderboard/leaderboard.md docs/leaderboard.json
-          git commit -m "Leaderboard update from PR #${{ github.event.pull_request.number }}"
+          git commit -m "Sync leaderboard from encrypted submissions"
           git push origin "HEAD:${BASE_REF}"
-
-      - name: Post PR evaluation comment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require("fs");
-            const path = "artifacts/pr_comment.md";
-            const body = fs.existsSync(path)
-              ? fs.readFileSync(path, "utf8")
-              : "Secure evaluation completed, but no comment artifact was generated.";
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body
-            });
-
-      - name: Fail workflow if evaluation failed
-        if: steps.process.outcome == 'failure'
-        run: exit 1

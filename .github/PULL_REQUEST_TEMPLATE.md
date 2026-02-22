@@ -1,16 +1,26 @@
-## Encrypted Submission PR
+## PR Type
 
-**Team Name:** [team]
-**Model:** [human | llm | human+llm]
-**Approach Summary:** [short description]
+- [ ] Encrypted submission PR (`submissions/*.enc`)
+- [ ] Code/docs/infrastructure improvement
 
-### Checklist
+## Summary
 
-- [ ] Added encrypted file(s) only: `submissions/*.enc`
+What changed and why?
+
+## If This Is A Submission PR
+
+Team: [team name]  
+Model: [human | llm | human+llm]  
+Approach (short): [text]
+
+Checklist:
+- [ ] Added encrypted file(s) only (`submissions/*.enc`)
 - [ ] Did not commit plaintext predictions
-- [ ] Did not modify evaluation workflow/scripts
-- [ ] Submission file follows accepted schema before encryption
+- [ ] Did not modify secure scoring workflow/scripts
 
-### Notes
+## If This Is A Code/Docs PR
 
-[Optional context for organizers]
+Checklist:
+- [ ] Updated docs for behavioral changes
+- [ ] Ran local checks (`python check_setup.py` or equivalent)
+- [ ] No secrets/private labels committed
