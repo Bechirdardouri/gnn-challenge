@@ -76,6 +76,7 @@ jobs:
             --private-key-path ".secrets/private_key.pem" \
             --private-key-password "${PRIVATE_KEY_PASSWORD}" \
             --private-labels-path "data/private/test_labels.csv" \
+            --test-nodes-path "data/test.csv" \
             --leaderboard-path "leaderboard/leaderboard.csv" \
             --comment-path "artifacts/pr_comment.md" \
             --strict

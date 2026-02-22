@@ -1,31 +1,16 @@
-## Submission Details
+## Encrypted Submission PR
 
-**Team Name:** [Your team name]
+**Team Name:** [team]
+**Model:** [human | llm | human+llm]
+**Approach Summary:** [short description]
 
-**Model Description:** 
-[Brief description of your approach - e.g., "3-layer GAT with attention dropout"]
+### Checklist
 
-**Key Features:**
-- [ ] Uses graph structure
-- [ ] Handles label noise
-- [ ] Addresses feature dropout
-- [ ] Novel architecture/technique
+- [ ] Added encrypted file(s) only: `submissions/*.enc`
+- [ ] Did not commit plaintext predictions
+- [ ] Did not modify evaluation workflow/scripts
+- [ ] Submission file follows accepted schema before encryption
 
-## Checklist
+### Notes
 
-- [ ] My submission file is in `submissions/<team_name>.csv`
-- [ ] File has columns: `node_id`, `target`
-- [ ] All test nodes have predictions
-- [ ] No external data used
-- [ ] Model runs in <5 minutes on CPU
-- [ ] Code is reproducible (if sharing code)
-
-## Expected Score
-**Validation F1:** [Your validation score, if available]
-
-## Additional Notes
-[Any additional information about your solution]
-
----
-
-The automated bot will score your submission and comment the results! 🤖
+[Optional context for organizers]

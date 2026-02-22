@@ -1,35 +1,36 @@
 # Submission Guide
 
-## Secure PR Submission (Encrypted)
+## 1. Generate predictions
 
-1. Create your prediction CSV (accepted headers):
-- `id,y_pred`
-- `filename,prediction`
-
-2. Encrypt your CSV with organizer public key:
+Recommended:
 
 ```bash
-python encryption/encrypt.py your_predictions.csv encryption/public_key.pem submissions/your_team.enc
+python starter_code/sota_graph_ensemble.py
 ```
 
-Alternative helper:
+This creates `submissions/sota_ensemble_submission.csv`.
+
+## 2. Validate locally
 
 ```bash
-cd submissions
-python encrypt_submissions.py --input your_predictions.csv
-cd ..
+python competition/validate_submission.py submissions/sota_ensemble_submission.csv data/test.csv
 ```
 
-3. Open a Pull Request that adds only `submissions/*.enc`.
+## 3. Encrypt the CSV
 
-The automation decrypts and scores your file privately. Plaintext predictions are never published.
-
-## Optional naming convention
-
-Use `team__model.enc` to auto-populate model on the leaderboard.
-
-Example:
-
-```text
-submissions/graph_wizards__human+llm.enc
+```bash
+python encryption/encrypt.py submissions/sota_ensemble_submission.csv encryption/public_key.pem submissions/<team_name>__<model>.enc
 ```
+
+## 4. Submit via PR
+
+Open a pull request that includes only `submissions/*.enc`.
+
+### Accepted plaintext CSV schemas
+
+Preferred:
+- `node_id,target`
+
+Also accepted:
+- `id,prediction`
+- `filename,y_pred`

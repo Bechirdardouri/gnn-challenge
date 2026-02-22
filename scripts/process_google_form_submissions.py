@@ -71,7 +71,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--test-nodes-path",
-        default=str(ROOT / "data" / "public" / "test_nodes.csv"),
+        default=str(ROOT / "data" / "test.csv"),
         help="Path to test nodes CSV.",
     )
     parser.add_argument(

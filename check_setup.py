@@ -1,84 +1,78 @@
 #!/usr/bin/env python3
-"""Quick setup verification script for HeteroShot challenge.
+"""Quick environment check for the challenge repository."""
 
-This script checks that your environment is correctly set up.
-"""
+from __future__ import annotations
 
+import importlib
 import sys
-import subprocess
+from pathlib import Path
 
 
-def check_python_version():
-    """Check Python version is 3.10+."""
+REQUIRED_PACKAGES = ["numpy", "pandas", "sklearn", "scipy", "cryptography"]
+OPTIONAL_PACKAGES = ["torch", "torch_geometric", "googleapiclient", "boto3"]
+
+REQUIRED_FILES = [
+    "data/train.csv",
+    "data/val.csv",
+    "data/test.csv",
+    "data/edges.csv",
+    "encryption/public_key.pem",
+]
+
+
+def check_python_version() -> bool:
     version = sys.version_info
-    if version.major < 3 or (version.major == 3 and version.minor < 10):
-        print(f" Python 3.10+ required, found {version.major}.{version.minor}")
-        return False
-    print(f" Python {version.major}.{version.minor}.{version.micro}")
-    return True
+    ok = version.major > 3 or (version.major == 3 and version.minor >= 10)
+    status = "OK" if ok else "FAIL"
+    print(f"[{status}] Python {version.major}.{version.minor}.{version.micro} (requires 3.10+)")
+    return ok
 
 
-def check_package(package_name):
-    """Check if a package is importable."""
+def check_import(package_name: str) -> bool:
     try:
-        __import__(package_name)
-        print(f" {package_name}")
+        importlib.import_module(package_name)
+        print(f"[OK] {package_name}")
         return True
     except ImportError:
-        print(f" {package_name} not installed")
+        print(f"[MISSING] {package_name}")
         return False
 
 
-def check_files():
-    """Check required files exist."""
-    from pathlib import Path
-    
-    required = [
-        "data/train.csv",
-        "data/val.csv", 
-        "data/test.csv",
-        "data/edges.csv"
-    ]
-    
-    all_exist = True
-    for file in required:
-        if Path(file).exists():
-            print(f" {file}")
-        else:
-            print(f" {file} missing - run: python data/make_dataset.py")
-            all_exist = False
-    
-    return all_exist
+def check_files() -> bool:
+    ok = True
+    for rel_path in REQUIRED_FILES:
+        exists = Path(rel_path).exists()
+        status = "OK" if exists else "MISSING"
+        print(f"[{status}] {rel_path}")
+        ok = ok and exists
+    return ok
 
 
-def main():
-    """Run all checks."""
-    print(" HeteroShot Environment Check\n")
-    
-    print(" Python Version:")
+def main() -> int:
+    print("Challenge Environment Check\n")
+
     py_ok = check_python_version()
-    print()
-    
-    print(" Required Packages:")
-    packages = ["numpy", "pandas", "sklearn", "torch", "torch_geometric"]
-    pkg_ok = all(check_package(pkg) for pkg in packages)
-    print()
-    
-    print(" Dataset Files:")
+    print("\nRequired packages:")
+    req_ok = all(check_import(pkg) for pkg in REQUIRED_PACKAGES)
+
+    print("\nOptional packages (needed only for specific workflows/models):")
+    _ = [check_import(pkg) for pkg in OPTIONAL_PACKAGES]
+
+    print("\nRequired files:")
     files_ok = check_files()
-    print()
-    
-    if py_ok and pkg_ok and files_ok:
-        print(" All checks passed! You're ready to compete!")
-        print("\nNext steps:")
-        print("  1. Run baseline: python starter_code/baseline_tabular.py")
-        print("  2. Create your model")
-        print("  3. Submit via Pull Request")
+
+    print("\nSuggested next steps:")
+    print("1. Train SOTA baseline: python starter_code/sota_graph_ensemble.py")
+    print("2. Encrypt submission: python encryption/encrypt.py <csv> encryption/public_key.pem submissions/<team>.enc")
+    print("3. Submit encrypted file via Pull Request")
+
+    if py_ok and req_ok and files_ok:
+        print("\nEnvironment check passed.")
         return 0
-    else:
-        print("  Some checks failed. Please fix the issues above.")
-        return 1
+
+    print("\nEnvironment check failed. Resolve missing items above.")
+    return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

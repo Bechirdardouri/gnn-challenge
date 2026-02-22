@@ -10,6 +10,7 @@ Both channels are evaluated by trusted GitHub Actions code from the base branch.
 ## Encrypted PR Flow
 
 1. Participants create predictions CSV offline.
+   - Preferred schema: `node_id,target`
 2. Participants encrypt the CSV using `encryption/public_key.pem`.
 3. Participants submit only `.enc` files in pull requests.
 4. Workflow decrypts submissions using `PRIVATE_KEY_PEM` from GitHub Secrets.
